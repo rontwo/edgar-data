@@ -15,6 +15,6 @@ setup(
     url='https://github.com/kutakdogan/visor-sec/',
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'pytest-cov', 'pytest-mock'],
-    install_requires=[],
+    install_requires=['requests'],
     packages=find_packages()
 )
