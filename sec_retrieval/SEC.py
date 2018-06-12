@@ -5,6 +5,10 @@ import requests
 from bs4 import BeautifulSoup
 
 
+class CIKNotFound(Exception):
+    pass
+
+
 class SEC:
 
     def __init__(self):
@@ -35,7 +39,7 @@ class SEC:
         url = self._generate_get_cik_url(**kwargs)
         resp = requests.get(url)
 
-        resp.raise_for_status()  # If raised, retry?
+        resp.raise_for_status()
 
         if resp.headers['Content-Type'] != 'application/xml':
             return None
@@ -48,18 +52,23 @@ class SEC:
         """Returns the company's CIK.
         Provide either a list of company names, or a ticker.
         """
-        if not names:
-            names = []
 
-        if (not names and not ticker) or (names and ticker):
+        cik = None
+
+        if (names is None and not ticker) or (names is not None and ticker):
             raise ValueError('Provide either a valid names array OR a ticker.')
         elif ticker:
             cik = self._request_cik(CIK=ticker)
-        else:
+        elif names:
             cik = self._request_cik(company=names[0])
 
-        if not cik:
+        if (not cik) and names:
+            # try again with the remaining names
             cik = self.get_cik(names[1:])
+
+        if not cik:
+            # could not find a valid name
+            raise CIKNotFound('Names list exhausted.')
 
         return cik
 
