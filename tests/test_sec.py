@@ -53,8 +53,8 @@ class TestSEC:
 
     def test_get_form_data(self, sec):
         assert sec.get_form_data(cik='', year=2010) == {
-            'fillings': [],
-            'xblr': None,
+            'filings': [],
+            'xbrl': None,
             'q3_gross_margin': None,
             'ticker': None
         }

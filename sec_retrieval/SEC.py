@@ -77,8 +77,8 @@ class SEC:
         Based on: https://github.com/lukerosiak/pysec
         """
         return {
-            'fillings': [],
-            'xblr': None,
+            'filings': [],
+            'xbrl': None,
             'q3_gross_margin': None,
             'ticker': None
         }
