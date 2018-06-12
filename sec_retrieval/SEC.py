@@ -2,6 +2,7 @@ import datetime
 from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
+from bs4 import BeautifulSoup
 
 
 class SEC:
@@ -30,6 +31,19 @@ class SEC:
 
         return url
 
+    def _request_cik(self, **kwargs):
+        url = self._generate_get_cik_url(**kwargs)
+        resp = requests.get(url)
+
+        resp.raise_for_status()  # If raised, retry?
+
+        if resp.headers['Content-Type'] != 'application/xml':
+            return None
+
+        soup = BeautifulSoup(resp.content, 'lxml-xml')
+        if soup.CIK:
+            return soup.CIK.string
+
     def get_cik(self, names=None, ticker=''):
         """Returns the company's CIK.
         Provide either a list of company names, or a ticker.
@@ -40,17 +54,14 @@ class SEC:
         if (not names and not ticker) or (names and ticker):
             raise ValueError('Provide either a valid names array OR a ticker.')
         elif ticker:
-            url = self._generate_get_cik_url(CIK=ticker)
+            cik = self._request_cik(CIK=ticker)
         else:
-            url = self._generate_get_cik_url(company=names[0])
+            cik = self._request_cik(company=names[0])
 
-        # Send request
+        if not cik:
+            cik = self.get_cik(names[1:])
 
-        wrong_result = False  # Check request
-        if wrong_result:
-            self.get_cik(names[1:])
-
-        return None
+        return cik
 
     def get_form_data(self, cik, year):
         """Retrieves information about a company's filings from the SEC.

@@ -10,15 +10,26 @@ def sec():
 
 class TestSEC:
 
-    def test_get_sik_raises_ValueError(self, sec):
+    def test_get_cik_raises_ValueError_if_invalid_args(self, sec):
         with pytest.raises(ValueError):
             sec.get_cik()
 
         with pytest.raises(ValueError):
             sec.get_cik(names=[], ticker='')
 
-    def test_get_sik(self, sec):
-        pass
+    def test_get_cik_raises_ValueError_if_invalid_company(self, sec):
+        with pytest.raises(ValueError):
+            sec.get_cik(ticker='invalid')
+
+        with pytest.raises(ValueError):
+            sec.get_cik(names=['advanced', 'invalid name'])
+
+    def test_get_cik(self, sec):
+        cik = sec.get_cik(ticker='msft')
+        assert cik == '0000789019'
+
+        cik = sec.get_cik(names=['microsoft corp'])
+        assert cik == '0000789019'
 
     def test_get_form_data(self, sec):
         assert sec.get_form_data(cik='', year=2010) == {
