@@ -3,10 +3,15 @@ from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup
+from requests import RequestException
+
+
+class SECRequestError(Exception):
+    """A request-related error ocurred."""
 
 
 class CIKNotFound(Exception):
-    pass
+    """Could not find a CIK for the given names or ticker."""
 
 
 class SEC:
@@ -37,9 +42,11 @@ class SEC:
 
     def _request_cik(self, **kwargs):
         url = self._generate_get_cik_url(**kwargs)
-        resp = requests.get(url)
-
-        resp.raise_for_status()
+        try:
+            resp = requests.get(url)
+            resp.raise_for_status()
+        except RequestException:
+            raise SECRequestError
 
         if resp.headers['Content-Type'] != 'application/xml':
             return None
@@ -68,7 +75,7 @@ class SEC:
 
         if not cik:
             # could not find a valid name
-            raise CIKNotFound('Names list exhausted.')
+            raise CIKNotFound('Names list exhausted or bad ticker.')
 
         return cik
 

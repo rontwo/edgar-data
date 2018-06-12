@@ -2,7 +2,7 @@ import pytest
 from requests import HTTPError
 
 from sec_retrieval import SEC
-from sec_retrieval.SEC import CIKNotFound
+from sec_retrieval.SEC import CIKNotFound, SECRequestError
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ class TestSEC:
         with pytest.raises(CIKNotFound):
             sec.get_cik(names=['advanced', 'invalid name'])
 
-    def test_get_cik_raises_HTTPError_if_response_error(self, mocker, sec):
+    def test_get_cik_raises_RequestError_if_response_error(self, mocker, sec):
         mock_get = mocker.patch('requests.get')
 
         mock_resp = mocker.Mock()
@@ -35,7 +35,7 @@ class TestSEC:
         mock_resp.raise_for_status.side_effect = HTTPError("SEC is down")
         mock_resp.status_code = 500
 
-        with pytest.raises(HTTPError):
+        with pytest.raises(SECRequestError):
             sec.get_cik(ticker='msft')
 
     def test_get_cik(self, sec):
