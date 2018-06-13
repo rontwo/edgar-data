@@ -25,12 +25,10 @@ class SEC:
             'owner': 'exclude',
             'action': 'getcompany',
             'output': 'xml',
-            'datea': '2015-01-01',
-            'dateb': self.current_date_str,
             'count': 1
         }
 
-    def _generate_get_cik_url(self, **kwargs):
+    def _generate_edgar_url(self, **kwargs):
         query = self._default_edgar_query()
         query.update(kwargs)
 
@@ -40,8 +38,8 @@ class SEC:
 
         return url
 
-    def _request_cik(self, **kwargs):
-        url = self._generate_get_cik_url(**kwargs)
+    def _request_edgar(self, **kwargs):
+        url = self._generate_edgar_url(**kwargs)
         try:
             resp = requests.get(url)
             resp.raise_for_status()
@@ -65,9 +63,9 @@ class SEC:
         if (names is None and not ticker) or (names is not None and ticker):
             raise ValueError('Provide either a valid names array OR a ticker.')
         elif ticker:
-            cik = self._request_cik(CIK=ticker)
+            cik = self._request_edgar(CIK=ticker, dateb=self.current_date_str)
         elif names:
-            cik = self._request_cik(company=names[0])
+            cik = self._request_edgar(company=names[0], dateb=self.current_date_str)
 
         if (not cik) and names:
             # try again with the remaining names
