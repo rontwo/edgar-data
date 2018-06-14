@@ -107,17 +107,22 @@ class SEC:
     def _get_forms_filenames(self, cik, year):
         pass
 
-    def _get_filename_10k(self, cik, year):
-        datea = '{}-01-01'.format(year)
-        dateb = '{}-12-31'.format(year+1)
-
-        resp = self._request_edgar(CIK=cik, type='10-K', datea=datea, dateb=dateb)
+    def _get_filing_urls(self, cik, filing_type, datea, dateb):
+        resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
         soup = BeautifulSoup(resp.content, 'lxml-xml')
         filing_links = soup.results.find_all('filingHREF')
 
         for filing_link in filing_links:
             url = filing_link.string
-            r = requests.get(url)
+            yield url
+
+    def _get_filename_10k(self, cik, year):
+        datea = '{}-01-01'.format(year)
+        dateb = '{}-12-31'.format(year+1)
+
+        for filing_url in self._get_filing_urls(cik, '10-K', datea, dateb):
+            r = requests.get(filing_url)
+
             tree = html.fromstring(r.content)
             period_of_report_str = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[1]/text()')[0]
 
@@ -127,7 +132,21 @@ class SEC:
             period_of_report = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[2]/text()')[0]
 
             if period_of_report[:4] == year:
-                return url.replace('-index', '')
+                return filing_url.replace('-index', '')
+
+    def _get_filenames_10q(self, cik, year):
+        datea = '{}-01-01'.format(year)
+        dateb = '{}-03-31'.format(year+1)
+
+        for filing_url in self._get_filing_urls(cik, '10-Q', datea, dateb):
+            yield filing_url.replace('-index', '')
+
+    def _get_filenames_8q(self, cik, year):
+        datea = '{}-01-01'.format(year)
+        dateb = '{}-12-31'.format(year+1)
+
+        for filing_url in self._get_filing_urls(cik, '8-Q', datea, dateb):
+            yield filing_url.replace('-index', '')
 
 
 class FilingRetriever:
