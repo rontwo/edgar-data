@@ -4,14 +4,19 @@ from urllib.parse import urlencode, urlparse, urlunparse
 import requests
 from bs4 import BeautifulSoup
 from requests import RequestException
+from lxml import html
 
 
 class SECRequestError(Exception):
-    """A request-related error ocurred."""
+    """A request-related error occurred."""
 
 
 class CIKNotFound(Exception):
     """Could not find a CIK for the given names or ticker."""
+
+
+class ReportError(Exception):
+    """An error occurred when trying to fetch a report."""
 
 
 class SEC:
@@ -46,6 +51,11 @@ class SEC:
         except RequestException:
             raise SECRequestError
 
+        return resp
+
+    def _request_cik(self, **kwargs):
+        resp = self._request_edgar(**kwargs)
+
         if resp.headers['Content-Type'] != 'application/xml':
             return None
 
@@ -63,9 +73,9 @@ class SEC:
         if (names is None and not ticker) or (names is not None and ticker):
             raise ValueError('Provide either a valid names array OR a ticker.')
         elif ticker:
-            cik = self._request_edgar(CIK=ticker, dateb=self.current_date_str)
+            cik = self._request_cik(CIK=ticker, dateb=self.current_date_str)
         elif names:
-            cik = self._request_edgar(company=names[0], dateb=self.current_date_str)
+            cik = self._request_cik(company=names[0], dateb=self.current_date_str)
 
         if (not cik) and names:
             # try again with the remaining names
@@ -81,9 +91,56 @@ class SEC:
         """Retrieves information about a company's filings from the SEC.
         Based on: https://github.com/lukerosiak/pysec
         """
+
+        forms_filenames = self._get_forms_filenames(cik, year)
+        #for form_filename in forms_filenames:
+        #    retriever = FilingRetriever(...)
+        #    data = retriever.retrieve()
+
         return {
             'filings': [],
             'xbrl': None,
             'q3_gross_margin': None,
             'ticker': None
         }
+
+    def _get_forms_filenames(self, cik, year):
+        pass
+
+    def _get_filename_10k(self, cik, year):
+        datea = '{}-01-01'.format(year)
+        dateb = '{}-12-31'.format(year+1)
+
+        resp = self._request_edgar(CIK=cik, type='10-K', datea=datea, dateb=dateb)
+        soup = BeautifulSoup(resp.content, 'lxml-xml')
+        filing_links = soup.results.find_all('filingHREF')
+
+        for filing_link in filing_links:
+            url = filing_link.string
+            r = requests.get(url)
+            tree = html.fromstring(r.content)
+            period_of_report_str = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[1]/text()')[0]
+
+            if period_of_report_str != 'Period of Report':
+                raise ReportError('Something wrong happened when fetching {} 10k filing.'.format(cik))
+
+            period_of_report = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[2]/text()')[0]
+
+            if period_of_report[:4] == year:
+                return url.replace('-index', '')
+
+
+class FilingRetriever:
+
+    def __init__(self, year, form, cik, filename):
+        self.html = ''
+        self.xbrl = None
+
+    def retrieve(self):
+        # Download html
+        # Download xbrl
+        pass
+
+    def ticker(self):
+        # get a company's stock ticker from an XML filing
+        pass
