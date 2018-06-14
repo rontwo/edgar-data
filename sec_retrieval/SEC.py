@@ -19,6 +19,14 @@ class ReportError(Exception):
     """An error occurred when trying to fetch a report."""
 
 
+class FilingNotFound(Exception):
+    """Could not find a filing with the given constraints."""
+
+
+class Filing10KNotFound(FilingNotFound):
+    """Could not find a 10-K filing with the given constraints."""
+
+
 class SEC:
 
     def __init__(self):
@@ -127,12 +135,17 @@ class SEC:
             period_of_report_str = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[1]/text()')[0]
 
             if period_of_report_str != 'Period of Report':
-                raise ReportError('Something wrong happened when fetching {} 10k filing.'.format(cik))
+                raise ReportError('Something wrong happened when fetching {} 10-K filing.'.format(cik))
 
             period_of_report = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[2]/text()')[0]
 
             if period_of_report[:4] == year:
+                # Period of report year == given end of fiscal year
+                # https://www.investopedia.com/terms/f/fiscalyear.asp
                 return filing_url.replace('-index', '')
+
+        raise Filing10KNotFound('Could not find a 10-K filing for the '
+                                'corresponding year ({0}) and CIK ({1}).'.format(year, cik))
 
     def _get_filenames_10q(self, cik, year):
         datea = '{}-01-01'.format(year)
