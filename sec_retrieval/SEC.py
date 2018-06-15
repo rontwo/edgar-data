@@ -132,12 +132,13 @@ class SEC:
             r = requests.get(filing_url)
 
             tree = html.fromstring(r.content)
-            period_of_report_str = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[1]/text()')[0]
 
-            if period_of_report_str != 'Period of Report':
+            period_of_report = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div/text()")
+
+            if not period_of_report:
                 raise ReportError('Something wrong happened when fetching {} 10-K filing.'.format(cik))
 
-            period_of_report = tree.xpath('//*[@id="formDiv"]/div[2]/div[2]/div[2]/text()')[0]
+            period_of_report = period_of_report[0]
 
             if period_of_report[:4] == year:
                 # Period of report year == given end of fiscal year
