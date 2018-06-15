@@ -1,5 +1,6 @@
 import datetime
 from urllib.parse import urlencode, urlparse, urlunparse
+import itertools
 
 import requests
 from bs4 import BeautifulSoup
@@ -113,7 +114,9 @@ class SEC:
         }
 
     def _get_forms_filenames(self, cik, year):
-        pass
+        return itertools.chain(self._get_filename_10k(cik, year),
+                               self._get_filenames_10q(cik, year),
+                               self._get_filenames_8k(cik, year))
 
     def _get_filing_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -140,10 +143,11 @@ class SEC:
 
             period_of_report = period_of_report[0]
 
-            if period_of_report[:4] == year:
+            if period_of_report[:4] == str(year):
                 # Period of report year == given end of fiscal year
                 # https://www.investopedia.com/terms/f/fiscalyear.asp
-                return filing_url.replace('-index', '')
+                yield filing_url.replace('-index', '')
+                return
 
         raise Filing10KNotFound('Could not find a 10-K filing for the '
                                 'corresponding year ({0}) and CIK ({1}).'.format(year, cik))
@@ -155,11 +159,11 @@ class SEC:
         for filing_url in self._get_filing_urls(cik, '10-Q', datea, dateb):
             yield filing_url.replace('-index', '')
 
-    def _get_filenames_8q(self, cik, year):
+    def _get_filenames_8k(self, cik, year):
         datea = '{}-01-01'.format(year)
         dateb = '{}-12-31'.format(year+1)
 
-        for filing_url in self._get_filing_urls(cik, '8-Q', datea, dateb):
+        for filing_url in self._get_filing_urls(cik, '8-K', datea, dateb):
             yield filing_url.replace('-index', '')
 
 
