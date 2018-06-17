@@ -1,4 +1,5 @@
 import datetime
+import re
 from urllib.parse import urlencode, urlparse, urlunparse
 import itertools
 
@@ -102,9 +103,9 @@ class SEC:
         """
 
         forms_filenames = self._get_forms_filenames(cik, year)
-        #for form_filename in forms_filenames:
-        #    retriever = FilingRetriever(...)
-        #    data = retriever.retrieve()
+        for form_filename in forms_filenames:
+            retriever = FilingRetriever(form_filename)
+            data = retriever.retrieve()
 
         return {
             'filings': [],
@@ -121,6 +122,17 @@ class SEC:
     def _get_filing_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
         soup = BeautifulSoup(resp.content, 'lxml-xml')
+
+        if soup.findAll(text=re.compile("No matching", re.IGNORECASE)):
+            # Can be either "No matching Ticker Symbol" or "No matching CIK"
+            raise ReportError("No matching CIK.")
+
+        if soup.findAll("div", {"class": "noCompanyMatch"}):
+            raise ReportError("Invalid company selection.")
+
+        if not soup.results:
+            return
+
         filing_links = soup.results.find_all('filingHREF')
 
         for filing_link in filing_links:
@@ -169,7 +181,8 @@ class SEC:
 
 class FilingRetriever:
 
-    def __init__(self, year, form, cik, filename):
+    def __init__(self, filename):
+        self.filename = filename
         self.html = ''
         self.xbrl = None
 

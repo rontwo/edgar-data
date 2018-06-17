@@ -2,7 +2,7 @@ import pytest
 from requests import HTTPError
 
 from sec_retrieval import SEC
-from sec_retrieval.SEC import CIKNotFound, SECRequestError
+from sec_retrieval.SEC import CIKNotFound, SECRequestError, ReportError, Filing10KNotFound
 
 
 @pytest.fixture
@@ -51,10 +51,16 @@ class TestSEC:
         cik = sec.get_cik(names=['advanced', 'AMD', 'Advanced Micro Devices'])
         assert cik == '0000002488'
 
-    def test_get_form_data(self, sec):
-        assert sec.get_form_data(cik='', year=2010) == {
-            'filings': [],
-            'xbrl': None,
-            'q3_gross_margin': None,
-            'ticker': None
-        }
+    def test_get_form_data_invalid_company_raises_ReportError(self, sec):
+        with pytest.raises(ReportError):
+            assert sec.get_form_data(cik='invalid_cik', year=1950)
+
+        with pytest.raises(ReportError):
+            assert sec.get_form_data(cik='123', year=1950)
+
+        with pytest.raises(ReportError):
+            assert sec.get_form_data(cik='', year=1950)
+
+    def test_get_form_data_invalid_date_raises_Filing10KNotFound(self, sec):
+        with pytest.raises(Filing10KNotFound):
+            sec.get_form_data(cik='0000789019', year=1950)
