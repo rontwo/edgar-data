@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from requests import RequestException
 from lxml import html
 
+from .xbrl import XBRL
+
 
 class SECRequestError(Exception):
     """A request-related error occurred."""
@@ -102,19 +104,28 @@ class SEC:
         Based on: https://github.com/lukerosiak/pysec
         """
 
-        for filing in self._get_all_filings(cik, year):
-            retriever = FilingRetriever(url=filing['url'],
-                                        form=filing['form'],
-                                        tree=filing['tree'],
-                                        cik=cik)
-            data = retriever.retrieve()
-
-        return {
+        all_filings = {
             'filings': [],
             'xbrl': None,
             'q3_gross_margin': None,
             'ticker': None
         }
+
+        for filing in self._get_all_filings(cik, year):
+            retriever = FilingRetriever(url=filing['url'],
+                                        form=filing['form'],
+                                        tree=filing['tree'],
+                                        cik=cik)
+
+            filing_html, xbrl, gross_margin, ticker = retriever.retrieve()
+
+            all_filings['filings'].append(filing_html)
+            if filing['form'] == '10-K':
+                all_filings['xbrl'] = xbrl
+                all_filings['q3_gross_margin'] = gross_margin
+                all_filings['ticker'] = ticker
+
+        return all_filings
 
     def _get_all_filings(self, cik, year):
         return itertools.chain(self._get_filing_10k(cik, year),
@@ -196,27 +207,41 @@ class FilingRetriever:
         self.html = ''
         self.xbrl = None
 
-    def retrieve(self):
-        html_url = self._html_link()
-
+    def _retrieve_document(self, url):
         try:
-            resp = requests.get(html_url)
+            resp = requests.get(url)
             resp.raise_for_status()
         except RequestException:
             raise SECRequestError
 
-        filing = self.clean_html(resp.text)
+        return resp.text
 
-    def xbrl_link(self):
+    def retrieve(self):
+        full_filing_doc = self._retrieve_document(self._html_url())
+        filing = self._clean_html(full_filing_doc)
+
         if self.form.startswith('10-K'):
-            id = self.filename.split('/')[-1][:-4]
-            return 'http://www.sec.gov/Archives/edgar/data/%s/%s/%s-xbrl.zip' % (self.cik, id.replace('-', ''), id)
-        return None
+            xbrl_doc = self._retrieve_document(self._xbrl_url())
 
-    def _html_link(self):
+            # If using the python-xbrl library:
+            #xbrl_parser = XBRLParser(precision=0)
+            #xbrl = xbrl_parser.parse(io.StringIO(xbrl_doc))
+            #gaap = xbrl_parser.parseGAAP(xbrl, ...)
+
+            xbrl = XBRL(xbrl_doc.encode())
+
+            gross_margin = xbrl.fields['GrossProfit'] / xbrl.fields['Revenues']
+
+            ticker = xbrl.fields['TradingSymbol']
+
+            return filing, xbrl, gross_margin, ticker
+
+        return filing, None, None, None
+
+    def _document_url(self, table_summary, file_description):
         # link is relative (i.e. /Archives/edgar/data/... )
-        link = self.tree.xpath('//*[@id="formDiv"]//table[@summary="Document Format Files"]'
-                               '//*[contains(text(),"{}")]/..//a/@href'.format(self.form))
+        link = self.tree.xpath('//*[@id="formDiv"]//table[@summary="{0}"]'
+                               '//*[contains(text(),"{1}")]/..//a/@href'.format(table_summary, file_description))
 
         if not link:
             raise FilingNotFound('Could not find the filing htm file at {}'.format(self.url))
@@ -229,11 +254,15 @@ class FilingRetriever:
 
         return url
 
-    def index_link(self):
-        id = self.filename.split('/')[-1][:-4]
-        return 'http://www.sec.gov/Archives/edgar/data/%s/%s/%s-index.htm' % (self.cik, id.replace('-', ''), id)
+    def _html_url(self):
+        return self._document_url(table_summary="Document Format Files",
+                                  file_description=self.form)
 
-    def clean_html(self, content):
+    def _xbrl_url(self):
+        return self._document_url(table_summary="Data Files",
+                                  file_description="XBRL INSTANCE DOCUMENT")
+
+    def _clean_html(self, content):
         font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
         style_attrs = re.compile(r'('
                                  r'((style|STYLE)=\".*?\")|'

@@ -66,4 +66,6 @@ class TestSEC:
             sec.get_form_data(cik='0000789019', year=1950)
 
     def test_get_form_data(self, sec):
-        sec.get_form_data(cik='0000789019', year=2016)
+        docs = sec.get_form_data(cik='0000789019', year=2016)
+
+        assert docs['q3_gross_margin'] == pytest.approx(0.6157993436474449)
