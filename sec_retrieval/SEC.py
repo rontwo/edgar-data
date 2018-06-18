@@ -102,9 +102,11 @@ class SEC:
         Based on: https://github.com/lukerosiak/pysec
         """
 
-        forms_filenames = self._get_forms_filenames(cik, year)
-        for form_filename in forms_filenames:
-            retriever = FilingRetriever(form_filename)
+        for filing in self._get_all_filings(cik, year):
+            retriever = FilingRetriever(url=filing['url'],
+                                        form=filing['form'],
+                                        tree=filing['tree'],
+                                        cik=cik)
             data = retriever.retrieve()
 
         return {
@@ -114,10 +116,10 @@ class SEC:
             'ticker': None
         }
 
-    def _get_forms_filenames(self, cik, year):
-        return itertools.chain(self._get_filename_10k(cik, year),
-                               self._get_filenames_10q(cik, year),
-                               self._get_filenames_8k(cik, year))
+    def _get_all_filings(self, cik, year):
+        return itertools.chain(self._get_filing_10k(cik, year),
+                               self._get_filings_10q(cik, year),
+                               self._get_filings_8k(cik, year))
 
     def _get_filing_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -139,11 +141,9 @@ class SEC:
             url = filing_link.string
             yield url
 
-    def _get_filename_10k(self, cik, year):
-        datea = '{}-01-01'.format(year)
-        dateb = '{}-12-31'.format(year+1)
+    def _get_filing_page(self, cik, form, datea, dateb):
 
-        for filing_url in self._get_filing_urls(cik, '10-K', datea, dateb):
+        for filing_url in self._get_filing_urls(cik, form, datea, dateb):
             r = requests.get(filing_url)
 
             tree = html.fromstring(r.content)
@@ -151,46 +151,103 @@ class SEC:
             period_of_report = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div/text()")
 
             if not period_of_report:
-                raise ReportError('Something wrong happened when fetching {} 10-K filing.'.format(cik))
+                raise ReportError('Something wrong happened when fetching {0} {1} filing.'.format(cik, form))
 
-            period_of_report = period_of_report[0]
+            yield {'form': form, 'url': filing_url, 'tree': tree, 'period_of_report': period_of_report[0]}
+
+    def _get_filing_10k(self, cik, year):
+        datea = '{}-01-01'.format(year)
+        dateb = '{}-12-31'.format(year+1)
+
+        for filing_page in self._get_filing_page(cik, '10-K', datea, dateb):
+            period_of_report = filing_page['period_of_report']
 
             if period_of_report[:4] == str(year):
                 # Period of report year == given end of fiscal year
                 # https://www.investopedia.com/terms/f/fiscalyear.asp
-                yield filing_url.replace('-index', '')
+                yield filing_page
                 return
 
         raise Filing10KNotFound('Could not find a 10-K filing for the '
                                 'corresponding year ({0}) and CIK ({1}).'.format(year, cik))
 
-    def _get_filenames_10q(self, cik, year):
+    def _get_filings_10q(self, cik, year):
         datea = '{}-01-01'.format(year)
         dateb = '{}-03-31'.format(year+1)
 
-        for filing_url in self._get_filing_urls(cik, '10-Q', datea, dateb):
-            yield filing_url.replace('-index', '')
+        for filing_page in self._get_filing_page(cik, '10-Q', datea, dateb):
+            yield filing_page
 
-    def _get_filenames_8k(self, cik, year):
+    def _get_filings_8k(self, cik, year):
         datea = '{}-01-01'.format(year)
-        dateb = '{}-12-31'.format(year+1)
+        dateb = '{}-12-31'.format(year)
 
-        for filing_url in self._get_filing_urls(cik, '8-K', datea, dateb):
-            yield filing_url.replace('-index', '')
+        for filing_page in self._get_filing_page(cik, '8-K', datea, dateb):
+            yield filing_page
 
 
 class FilingRetriever:
 
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, url, form, tree, cik):
+        self.cik = cik
+        self.tree = tree
+        self.form = form
+        self.url = url
         self.html = ''
         self.xbrl = None
 
     def retrieve(self):
-        # Download html
-        # Download xbrl
-        pass
+        html_url = self._html_link()
 
-    def ticker(self):
-        # get a company's stock ticker from an XML filing
-        pass
+        try:
+            resp = requests.get(html_url)
+            resp.raise_for_status()
+        except RequestException:
+            raise SECRequestError
+
+        filing = self.clean_html(resp.text)
+
+    def xbrl_link(self):
+        if self.form.startswith('10-K'):
+            id = self.filename.split('/')[-1][:-4]
+            return 'http://www.sec.gov/Archives/edgar/data/%s/%s/%s-xbrl.zip' % (self.cik, id.replace('-', ''), id)
+        return None
+
+    def _html_link(self):
+        # link is relative (i.e. /Archives/edgar/data/... )
+        link = self.tree.xpath('//*[@id="formDiv"]//table[@summary="Document Format Files"]'
+                               '//*[contains(text(),"{}")]/..//a/@href'.format(self.form))
+
+        if not link:
+            raise FilingNotFound('Could not find the filing htm file at {}'.format(self.url))
+
+        # Safely insert https://www.sec.gov in the link
+        url_parts = list(urlparse(link[0]))
+        url_parts[0] = 'https'
+        url_parts[1] = 'www.sec.gov'
+        url = urlunparse(url_parts)
+
+        return url
+
+    def index_link(self):
+        id = self.filename.split('/')[-1][:-4]
+        return 'http://www.sec.gov/Archives/edgar/data/%s/%s/%s-index.htm' % (self.cik, id.replace('-', ''), id)
+
+    def clean_html(self, content):
+        font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
+        style_attrs = re.compile(r'('
+                                 r'((style|STYLE)=\".*?\")|'
+                                 r'((valign|VALIGN)=\".*?\")|'
+                                 r'((align|ALIGN)=\".*?\")|'
+                                 r'((width|WIDTH)=\".*?\")|'
+                                 r'((height|HEIGHT)=\".*?\")|'
+                                 r'((border|BORDER)=\".*?\")|'
+                                 r'((cellpadding|CELLPADDING)=\".*?\")|'
+                                 r'((cellspacing|CELLSPACING)=\".*?\")|'
+                                 r'((size|SIZE)=\".*?\")|'
+                                 r'((colspan|COLSPAN)=\".*?\")'
+                                 r')')
+        no_font = re.sub(font_tags, '', content)
+        no_style = re.sub(style_attrs, '', no_font)
+
+        return no_style

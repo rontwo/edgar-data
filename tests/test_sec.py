@@ -64,3 +64,6 @@ class TestSEC:
     def test_get_form_data_invalid_date_raises_Filing10KNotFound(self, sec):
         with pytest.raises(Filing10KNotFound):
             sec.get_form_data(cik='0000789019', year=1950)
+
+    def test_get_form_data(self, sec):
+        sec.get_form_data(cik='0000789019', year=2016)
