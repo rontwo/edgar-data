@@ -1,17 +1,17 @@
-# Running tests
-
-`$ python setup.py test`
-
 # Installing
 
 `$ python setup.py install`
 
+# Running tests
+
+`$ python setup.py test`
+
 # Usage
 
 ```python
-from sec_retrieval import SEC
+from edgar_data import EdgarData
 
-sec = SEC()
+sec = EdgarData()
 
 cik = sec.get_cik(names=['microsoft'])
 # or

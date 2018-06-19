@@ -1,13 +1,13 @@
 import pytest
 from requests import HTTPError
 
-from sec_retrieval import SEC
-from sec_retrieval.SEC import CIKNotFound, SECRequestError, ReportError, Filing10KNotFound
+from edgar_data import EdgarData
+from edgar_data.EdgarData import CIKNotFound, EDGARRequestError, ReportError, Filing10KNotFound
 
 
 @pytest.fixture
 def sec():
-    return SEC()
+    return EdgarData()
 
 
 class TestSEC:
@@ -35,7 +35,7 @@ class TestSEC:
         mock_resp.raise_for_status.side_effect = HTTPError("SEC is down")
         mock_resp.status_code = 500
 
-        with pytest.raises(SECRequestError):
+        with pytest.raises(EDGARRequestError):
             sec.get_cik(ticker='msft')
 
     def test_get_cik(self, sec):
