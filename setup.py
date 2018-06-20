@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    author="Guilherme Caminha",
+    author="Gaussian Holdings, LLC",
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
@@ -12,7 +12,7 @@ setup(
     description="A tool for retrieving information from EDGAR.",
     name="edgar_data",
     version='0.2.0',
-    url='https://github.com/gaussianco/edgar-data/',
+    url='https://github.com/gaussian/edgar-data/',
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'pytest-cov', 'pytest-mock'],
     install_requires=['requests', 'lxml', 'beautifulsoup4'],
