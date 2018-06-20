@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from requests import RequestException
 from lxml import html
 
+from edgar_data.Filings import Filings, Filing
 from .xbrl import XBRL
 
 
@@ -104,37 +105,26 @@ class EdgarData:
         Based on: https://github.com/lukerosiak/pysec
         """
 
-        all_filings = {
-            'filings': [],
-            '10q_xbrl': [],
-            '10k_xbrl': None,
-            'q3_gross_margin': None,
-            'ticker': None
-        }
+        all_filings = Filings()
 
-        for filing in self._get_all_filings(cik, year):
+        for filing in self._get_all_filings_index_pages(cik, year):
             retriever = FilingRetriever(url=filing['url'],
                                         form=filing['form'],
                                         tree=filing['tree'],
                                         cik=cik)
-
             filing_html, xbrl = retriever.retrieve()
 
-            all_filings['filings'].append(filing_html)
-
-            if filing['form'] == '10-K':
-                all_filings['10k_xbrl'] = xbrl
-            elif filing['form'] == '10-Q':
-                all_filings['10q_xbrl'].append(xbrl)
+            all_filings.add_filing(
+                Filing(filing_html, xbrl, cik, filing['form'], filing['period_of_report']))
 
         return all_filings
 
-    def _get_all_filings(self, cik, year):
-        return itertools.chain(self._get_filing_10k(cik, year),
-                               self._get_filings_10q(cik, year),
-                               self._get_filings_8k(cik, year))
+    def _get_all_filings_index_pages(self, cik, year):
+        return itertools.chain(self._get_filing_index_10k(cik, year),
+                               self._get_filings_index_10q(cik, year),
+                               self._get_filings_index_8k(cik, year))
 
-    def _get_filing_urls(self, cik, filing_type, datea, dateb):
+    def _get_filings_index_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
         soup = BeautifulSoup(resp.content, 'lxml-xml')
 
@@ -154,9 +144,9 @@ class EdgarData:
             url = filing_link.string
             yield url
 
-    def _get_filing_page(self, cik, form, datea, dateb):
+    def _get_filing_index_page(self, cik, form, datea, dateb):
 
-        for filing_url in self._get_filing_urls(cik, form, datea, dateb):
+        for filing_url in self._get_filings_index_urls(cik, form, datea, dateb):
             r = requests.get(filing_url)
 
             tree = html.fromstring(r.content)
@@ -168,11 +158,11 @@ class EdgarData:
 
             yield {'form': form, 'url': filing_url, 'tree': tree, 'period_of_report': period_of_report[0]}
 
-    def _get_filing_10k(self, cik, year):
+    def _get_filing_index_10k(self, cik, year):
         datea = '{}-01-01'.format(year)
         dateb = '{}-12-31'.format(year+1)
 
-        for filing_page in self._get_filing_page(cik, '10-K', datea, dateb):
+        for filing_page in self._get_filing_index_page(cik, '10-K', datea, dateb):
             period_of_report = filing_page['period_of_report']
 
             if period_of_report[:4] == str(year):
@@ -184,18 +174,21 @@ class EdgarData:
         raise Filing10KNotFound('Could not find a 10-K filing for the '
                                 'corresponding year ({0}) and CIK ({1}).'.format(year, cik))
 
-    def _get_filings_10q(self, cik, year):
+    def _get_filings_index_10q(self, cik, year):
         datea = '{}-01-01'.format(year)
         dateb = '{}-03-31'.format(year+1)
 
-        for filing_page in self._get_filing_page(cik, '10-Q', datea, dateb):
-            yield filing_page
+        for filing_page in self._get_filing_index_page(cik, '10-Q', datea, dateb):
+            period_of_report = filing_page['period_of_report']
 
-    def _get_filings_8k(self, cik, year):
+            if period_of_report[:4] == str(year):
+                yield filing_page
+
+    def _get_filings_index_8k(self, cik, year):
         datea = '{}-01-01'.format(year)
         dateb = '{}-12-31'.format(year)
 
-        for filing_page in self._get_filing_page(cik, '8-K', datea, dateb):
+        for filing_page in self._get_filing_index_page(cik, '8-K', datea, dateb):
             yield filing_page
 
 
@@ -231,8 +224,6 @@ class FilingRetriever:
             #gaap = xbrl_parser.parseGAAP(xbrl, ...)
 
             xbrl = XBRL(xbrl_doc.encode())
-
-            print(self.form, self.url)
 
             return filing, xbrl
 
