@@ -57,7 +57,8 @@ class EdgarData:
         return url
 
     def _request_edgar(self, **kwargs):
-        url = self._generate_edgar_url(**kwargs)
+        kwargs_without_Nones = {k: v for k, v in kwargs.items() if v is not None}
+        url = self._generate_edgar_url(**kwargs_without_Nones)
         try:
             resp = requests.get(url)
             resp.raise_for_status()
@@ -79,6 +80,13 @@ class EdgarData:
     def get_cik(self, names=None, ticker=''):
         """Returns the company's CIK.
         Provide either a list of company names, or a ticker.
+
+        :param names: List of possible company names.
+        :param ticker: Company's trading symbol.
+        :type names: List[str]
+        :type ticker: str
+        :return: Company's Central Index Key (CIK)
+        :rtype: str
         """
 
         cik = None
@@ -100,14 +108,39 @@ class EdgarData:
 
         return cik
 
-    def get_form_data(self, cik, year):
+    def get_form_data(self, cik, date_start=None, date_end=None, calendar_year=None):
         """Retrieves information about a company's filings from the SEC.
         Based on: https://github.com/lukerosiak/pysec
+
+        :Example:
+
+        >>> from datetime import datetime
+        >>> edgar = EdgarData()
+        >>> # Retrieves all filings between 2015-01-01 to 2015-03-15:
+        >>> filings = edgar.get_form_data('0000002488', datetime(2015, 1, 1), datetime(2015, 3, 15))
+        >>> # Retrieves all filings for the calendar year 2015:
+        >>> filings_year = edgar.get_form_data('0000002488', calendar_year=2015)
+
+        :param cik: Company's CIK.
+        :param date_start: Optional. Date from.
+        :param date_end: Optional. Date to.
+        :param calendar_year: Optional. If provided, parameters `date_start` and `date_end` will be ignored,
+            and the algorithm will try to retrieve filings for the given year (i.e. period end date within given year).
+        :type cik: str
+        :type date_start: datetime object
+        :type date_end: datetime object
+        :type calendar_year: int
+        :return: All the found filings.
+        :rtype: Filings
         """
+
+        if calendar_year:
+            date_start = None
+            date_end = None
 
         all_filings = Filings()
 
-        for filing in self._get_all_filings_index_pages(cik, year):
+        for filing in self._get_all_filings_index_pages(cik, date_start, date_end, calendar_year):
             retriever = FilingRetriever(url=filing['url'],
                                         form=filing['form'],
                                         tree=filing['tree'],
@@ -119,10 +152,15 @@ class EdgarData:
 
         return all_filings
 
-    def _get_all_filings_index_pages(self, cik, year):
-        return itertools.chain(self._get_filing_index_10k(cik, year),
-                               self._get_filings_index_10q(cik, year),
-                               self._get_filings_index_8k(cik, year))
+    def _get_all_filings_index_pages(self, cik, datea, dateb, calendar_year):
+        if datea:
+            datea = datea.strftime("%Y-%m-%d")
+        if dateb:
+            dateb = dateb.strftime("%Y-%m-%d")
+
+        return itertools.chain(self._get_filing_index_10k(cik, datea, dateb, calendar_year),
+                               self._get_filings_index_10q(cik, datea, dateb, calendar_year),
+                               self._get_filings_index_8k(cik, datea, dateb, calendar_year))
 
     def _get_filings_index_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -158,35 +196,39 @@ class EdgarData:
 
             yield {'form': form, 'url': filing_url, 'tree': tree, 'period_of_report': period_of_report[0]}
 
-    def _get_filing_index_10k(self, cik, year):
-        datea = '{}-01-01'.format(year)
-        dateb = '{}-12-31'.format(year+1)
+    def _get_filing_index_10k(self, cik, datea, dateb, calendar_year):
+        if calendar_year:
+            datea = '{}-01-01'.format(calendar_year)
+            dateb = '{}-12-31'.format(calendar_year+1)
 
         for filing_page in self._get_filing_index_page(cik, '10-K', datea, dateb):
             period_of_report = filing_page['period_of_report']
 
-            if period_of_report[:4] == str(year):
+            if period_of_report[:4] == str(calendar_year):
                 # Period of report year == given end of fiscal year
                 # https://www.investopedia.com/terms/f/fiscalyear.asp
                 yield filing_page
                 return
 
-        raise Filing10KNotFound('Could not find a 10-K filing for the '
-                                'corresponding year ({0}) and CIK ({1}).'.format(year, cik))
+        if calendar_year:
+            raise Filing10KNotFound('Could not find a 10-K filing for the '
+                                    'corresponding date range ({0} / {1}) and CIK ({2}).'.format(datea, dateb, cik))
 
-    def _get_filings_index_10q(self, cik, year):
-        datea = '{}-01-01'.format(year)
-        dateb = '{}-03-31'.format(year+1)
+    def _get_filings_index_10q(self, cik, datea, dateb, calendar_year):
+        if calendar_year:
+            datea = '{}-01-01'.format(calendar_year)
+            dateb = '{}-03-31'.format(calendar_year+1)
 
         for filing_page in self._get_filing_index_page(cik, '10-Q', datea, dateb):
             period_of_report = filing_page['period_of_report']
 
-            if period_of_report[:4] == str(year):
+            if period_of_report[:4] == str(calendar_year):
                 yield filing_page
 
-    def _get_filings_index_8k(self, cik, year):
-        datea = '{}-01-01'.format(year)
-        dateb = '{}-12-31'.format(year)
+    def _get_filings_index_8k(self, cik, datea, dateb, calendar_year):
+        if calendar_year:
+            datea = '{}-01-01'.format(calendar_year)
+            dateb = '{}-12-31'.format(calendar_year)
 
         for filing_page in self._get_filing_index_page(cik, '8-K', datea, dateb):
             yield filing_page

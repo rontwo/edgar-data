@@ -1,13 +1,9 @@
+from datetime import datetime
+
 import pytest
 from requests import HTTPError
 
-from edgar_data import EdgarData
 from edgar_data.EdgarData import CIKNotFound, EDGARRequestError, ReportError, Filing10KNotFound
-
-
-@pytest.fixture
-def sec():
-    return EdgarData()
 
 
 class TestSEC:
@@ -53,22 +49,43 @@ class TestSEC:
 
     def test_get_form_data_invalid_company_raises_ReportError(self, sec):
         with pytest.raises(ReportError):
-            assert sec.get_form_data(cik='invalid_cik', year=1950)
+            assert sec.get_form_data(cik='invalid_cik', calendar_year=1950)
 
         with pytest.raises(ReportError):
-            assert sec.get_form_data(cik='123', year=1950)
+            assert sec.get_form_data(cik='123', calendar_year=1950)
 
         with pytest.raises(ReportError):
-            assert sec.get_form_data(cik='', year=1950)
+            assert sec.get_form_data(cik='', calendar_year=1950)
 
     def test_get_form_data_invalid_date_raises_Filing10KNotFound(self, sec):
         with pytest.raises(Filing10KNotFound):
-            sec.get_form_data(cik='0000789019', year=1950)
+            sec.get_form_data(cik='0000789019', calendar_year=1950)
 
-    def test_get_form_data(self, sec):
-        docs = sec.get_form_data(cik='0000789019', year=2016)
+    def test_get_form_data_returns_within_range(self, sec):
+        # Should return only year = 2016
+        docs = sec.get_form_data(cik='0000789019', calendar_year=2016)
 
         for doc in docs.all_filings():
-            print(doc)
+            assert doc.period_end_date[:4] == '2016'
 
-        assert docs['q3_gross_margin'] == pytest.approx(0.6157993436474449)
+        min_date = datetime(2016, 1, 1)
+        max_date = datetime(2016, 4, 15)
+
+        docs = sec.get_form_data(cik='0000789019', date_start=min_date, date_end=max_date)
+
+        for doc in docs.all_filings():
+            assert min_date < doc.period_end_date < max_date
+
+    def test_get_form_data(self, sec, company):
+        try:
+            cik = sec.get_cik(names=company['company'])
+        except CIKNotFound:
+            cik = sec.get_cik(ticker=company['ticker'])
+
+        assert cik == company['cik']
+
+        docs = sec.get_form_data(cik=cik, calendar_year=2017)
+
+        for doc in docs.all_filings():
+            if doc.form_type == '10-K':
+                assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']

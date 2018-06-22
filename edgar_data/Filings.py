@@ -1,4 +1,5 @@
 import itertools
+from datetime import datetime
 
 
 class UnknownFilingType(Exception):
@@ -14,16 +15,20 @@ class Filing:
         :Example:
 
         >>> filing = Filing(...)
-        >>> filing.xbrl['TradingSymbol']  # returns the ticker
+        >>> filing.fields['TradingSymbol']  # returns the ticker
         """
         self.html = html
         self.xbrl = xbrl
+        if xbrl:
+            self.fields = xbrl.fields
+        else:
+            self.fields = None
         self.cik = cik
         self.form_type = form_type
-        self.period_end_date = period_of_report
+        self.period_end_date = datetime.strptime(period_of_report, "%Y-%m-%d")  # type: datetime
 
     def __repr__(self):
-        return "{0} - {1}".format(self.cik, self.form_type)
+        return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)
 
 
 class Filings:
@@ -36,15 +41,20 @@ class Filings:
         self._forms_8k = []
 
     def all_filings(self):
-        return itertools.chain([self._form_10k],
-                               self._forms_10q,
-                               self._forms_8k)
+        """
+        :return: All found filings.
+        :rtype: List[Filing]
+        """
+        return (filing
+                for filing
+                in itertools.chain([self._form_10k], self._forms_10q, self._forms_8k)
+                if filing)
 
     def add_filing(self, filing):
         """ Gets a filing dict containing the full filing html and a XBRL object, turns
         that into a Filing object, and inserts it.
 
-        :param filing: Filing obj
+        :type filing: Filing obj
         """
         if filing.form_type == '10-K':
             self._form_10k = filing
