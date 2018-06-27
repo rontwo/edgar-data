@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from requests import RequestException
 from lxml import html
 
-from edgar_data.Filings import Filings, Filing
+from edgar_data.FilingsDataset import FilingsDataset, Filing
 from .xbrl import XBRL
 
 
@@ -131,14 +131,14 @@ class EdgarData:
         :type date_end: datetime object
         :type calendar_year: int
         :return: All the found filings.
-        :rtype: Filings
+        :rtype: FilingsDataset
         """
 
         if calendar_year:
             date_start = None
             date_end = None
 
-        all_filings = Filings()
+        all_filings = FilingsDataset()
 
         for filing in self._get_all_filings_index_pages(cik, date_start, date_end, calendar_year):
             retriever = FilingRetriever(url=filing['url'],

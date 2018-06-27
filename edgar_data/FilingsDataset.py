@@ -31,7 +31,7 @@ class Filing:
         return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)
 
 
-class Filings:
+class FilingsDataset:
 
     def __init__(self):
         """ Class for holding several Filing objects.

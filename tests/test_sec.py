@@ -66,7 +66,7 @@ class TestSEC:
         docs = sec.get_form_data(cik='0000789019', calendar_year=2016)
 
         for doc in docs.all_filings():
-            assert doc.period_end_date[:4] == '2016'
+            assert doc.period_end_date.year == 2016
 
         min_date = datetime(2016, 1, 1)
         max_date = datetime(2016, 4, 15)
