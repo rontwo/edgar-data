@@ -6,7 +6,7 @@ class UnknownFilingType(Exception):
     """A filing of unknown type has been found."""
 
 
-class Filing:
+class EdgarForm:
 
     def __init__(self, html, xbrl, cik, form_type, period_of_report):
         """Filing class. Access XBRL data through the `xbrl` attribute.
@@ -14,7 +14,7 @@ class Filing:
 
         :Example:
 
-        >>> filing = Filing(...)
+        >>> filing = EdgarForm(...)
         >>> filing.fields['TradingSymbol']  # returns the ticker
         """
         self.html = html

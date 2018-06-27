@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from requests import RequestException
 from lxml import html
 
-from edgar_data.FilingsDataset import FilingsDataset, Filing
+from edgar_data.FilingsDataset import FilingsDataset, EdgarForm
 from .xbrl import XBRL
 
 
@@ -148,7 +148,7 @@ class EdgarData:
             filing_html, xbrl = retriever.retrieve()
 
             all_filings.add_filing(
-                Filing(filing_html, xbrl, cik, filing['form'], filing['period_of_report']))
+                EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report']))
 
         return all_filings
 
@@ -259,28 +259,29 @@ class FilingRetriever:
     def retrieve(self):
         full_filing_doc = self._retrieve_document(self._html_url())
         filing = self._clean_html(full_filing_doc)
+        xbrl = None
 
         if self.form in ('10-K', '10-Q', '20-F'):
-            xbrl_doc = self._retrieve_document(self._xbrl_url())
+            try:
+                xbrl_doc = self._retrieve_document(self._xbrl_url())
 
-            # If using the python-xbrl library (this actually doesn't work, as every info is filled as 0.0):
-            #xbrl_parser = XBRLParser(precision=0)
-            #xbrl = xbrl_parser.parse(io.StringIO(xbrl_doc))
-            #gaap = xbrl_parser.parseGAAP(xbrl, ...)
+                # If using the python-xbrl library (this actually doesn't work, as every info is filled as 0.0):
+                #xbrl_parser = XBRLParser(precision=0)
+                #xbrl = xbrl_parser.parse(io.StringIO(xbrl_doc))
+                #gaap = xbrl_parser.parseGAAP(xbrl, ...)
 
-            xbrl = XBRL(xbrl_doc.encode())
+                xbrl = XBRL(xbrl_doc.encode())
+            except FilingNotFound:
+                xbrl = None
 
-            return filing, xbrl
-
-        return filing, None
+        return filing, xbrl
 
     def _document_url(self, table_summary, file_description):
         # link is relative (i.e. /Archives/edgar/data/... )
         link = self.tree.xpath('//*[@id="formDiv"]//table[@summary="{0}"]'
                                '//*[contains(text(),"{1}")]/..//a/@href'.format(table_summary, file_description))
-
         if not link:
-            raise FilingNotFound('Could not find the filing htm file at {}'.format(self.url))
+            raise FilingNotFound('Could not find the file (type: {0}) at {1}'.format(file_description, self.url))
 
         # Safely insert https://www.sec.gov in the link
         url_parts = list(urlparse(link[0]))

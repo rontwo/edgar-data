@@ -13,7 +13,8 @@ Field = namedtuple('Field', ['value', 'ref_type'])
 
 currency_identifiers = (
     ("usd", "$"),
-    ("jpy", "¥")
+    ("jpy", "¥"),
+    ("cny", "cny")
 )
 
 
