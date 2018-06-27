@@ -9,25 +9,36 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['Toyota'],
+        '2017_revenue': 27597,
+        'ticker': 'TM',
+        'cik': '0001094517',
+        'currency': 'jpy'
+    },
+    {
         'company': ['Walmart Inc'],
         '2017_revenue': 486,
-        'cik': '0000104169'
+        'cik': '0000104169',
+        'currency': 'usd'
     },
     {
         'company': ['BERKSHIRE HATHAWAY INC'],
         '2017_revenue': 242,
         'ticker': 'BRKA',
-        'cik': '0001067983'
+        'cik': '0001067983',
+        'currency': 'usd'
     },
     {
         'company': ['Apple inc'],
-        '2017_revenue': 216,
-        'cik': '0000320193'
+        '2017_revenue': 229,
+        'cik': '0000320193',
+        'currency': 'usd'
     },
     {
         'company': ['Exxon Mobil'],
-        '2017_revenue': 205,
-        'cik': '0000034088'
+        '2017_revenue': 237,
+        'cik': '0000034088',
+        'currency': 'usd'
     }
 ])
 def company(request):

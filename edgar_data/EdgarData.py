@@ -158,7 +158,7 @@ class EdgarData:
         if dateb:
             dateb = dateb.strftime("%Y-%m-%d")
 
-        return itertools.chain(self._get_filing_index_10k(cik, datea, dateb, calendar_year),
+        return itertools.chain(self._get_filing_index_yearly(cik, datea, dateb, calendar_year),
                                self._get_filings_index_10q(cik, datea, dateb, calendar_year),
                                self._get_filings_index_8k(cik, datea, dateb, calendar_year))
 
@@ -180,11 +180,15 @@ class EdgarData:
 
         for filing_link in filing_links:
             url = filing_link.string
-            yield url
+            form_type = filing_link.parent.type.string
+            yield url, form_type
 
     def _get_filing_index_page(self, cik, form, datea, dateb):
 
-        for filing_url in self._get_filings_index_urls(cik, form, datea, dateb):
+        for filing_url, filing_type in self._get_filings_index_urls(cik, form, datea, dateb):
+            if filing_type != form:
+                continue
+
             r = requests.get(filing_url)
 
             tree = html.fromstring(r.content)
@@ -196,7 +200,7 @@ class EdgarData:
 
             yield {'form': form, 'url': filing_url, 'tree': tree, 'period_of_report': period_of_report[0]}
 
-    def _get_filing_index_10k(self, cik, datea, dateb, calendar_year):
+    def _get_filing_index_yearly(self, cik, datea, dateb, calendar_year):
         if calendar_year:
             datea = '{}-01-01'.format(calendar_year)
             dateb = '{}-12-31'.format(calendar_year+1)
@@ -210,9 +214,8 @@ class EdgarData:
                 yield filing_page
                 return
 
-        if calendar_year:
-            raise Filing10KNotFound('Could not find a 10-K filing for the '
-                                    'corresponding date range ({0} / {1}) and CIK ({2}).'.format(datea, dateb, cik))
+        for filing_page in self._get_filing_index_page(cik, '20-F', datea, dateb):
+            yield filing_page
 
     def _get_filings_index_10q(self, cik, datea, dateb, calendar_year):
         if calendar_year:
@@ -257,7 +260,7 @@ class FilingRetriever:
         full_filing_doc = self._retrieve_document(self._html_url())
         filing = self._clean_html(full_filing_doc)
 
-        if self.form == '10-K' or self.form == '10-Q':
+        if self.form in ('10-K', '10-Q', '20-F'):
             xbrl_doc = self._retrieve_document(self._xbrl_url())
 
             # If using the python-xbrl library (this actually doesn't work, as every info is filled as 0.0):

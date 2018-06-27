@@ -57,10 +57,6 @@ class TestSEC:
         with pytest.raises(ReportError):
             assert sec.get_form_data(cik='', calendar_year=1950)
 
-    def test_get_form_data_invalid_date_raises_Filing10KNotFound(self, sec):
-        with pytest.raises(Filing10KNotFound):
-            sec.get_form_data(cik='0000789019', calendar_year=1950)
-
     def test_get_form_data_returns_within_range(self, sec):
         # Should return only year = 2016
         docs = sec.get_form_data(cik='0000789019', calendar_year=2016)
@@ -87,5 +83,7 @@ class TestSEC:
         docs = sec.get_form_data(cik=cik, calendar_year=2017)
 
         for doc in docs.all_filings():
-            if doc.form_type == '10-K':
-                assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']
+            if doc.period_end_date.year == 2017:
+                if doc.form_type in ('10-K', '20-F'):
+                    assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']
+                    assert doc.fields.currency('Revenues')[0] == company['currency']

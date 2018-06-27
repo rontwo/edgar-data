@@ -35,8 +35,9 @@ class FilingsDataset:
 
     def __init__(self):
         """ Class for holding several Filing objects.
+        The `_form_yearly` property might hold 10-K or 20-F forms.
         """
-        self._form_10k = None
+        self._form_yearly = []
         self._forms_10q = []
         self._forms_8k = []
 
@@ -47,7 +48,7 @@ class FilingsDataset:
         """
         return (filing
                 for filing
-                in itertools.chain([self._form_10k], self._forms_10q, self._forms_8k)
+                in itertools.chain(self._form_yearly, self._forms_10q, self._forms_8k)
                 if filing)
 
     def add_filing(self, filing):
@@ -56,8 +57,9 @@ class FilingsDataset:
 
         :type filing: Filing obj
         """
-        if filing.form_type == '10-K':
-            self._form_10k = filing
+        if filing.form_type == '10-K' or filing.form_type == '20-F':
+            if filing.xbrl:
+                self._form_yearly.append(filing)
         elif filing.form_type == '10-Q':
             self._forms_10q.append(filing)
         elif filing.form_type == '8-K':

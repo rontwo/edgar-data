@@ -2,17 +2,50 @@
 # This module uses Open Source components. You can find the source code
 # for the full project in the url below:
 # https://github.com/lukerosiak/pysec
+from collections import namedtuple
 
 from lxml import etree
 from .xbrl_fundamentals import FundamentantalAccountingConcepts
 import re
 
 
+Field = namedtuple('Field', ['value', 'ref_type'])
+
+currency_identifiers = (
+    ("usd", "$"),
+    ("jpy", "¥")
+)
+
+
+class FieldsDataset:
+
+    def __init__(self):
+        self.fields = {}
+
+    def __getitem__(self, item):
+        field = self.fields[item]
+
+        if isinstance(field, Field):
+            return field.value
+        else:
+            return field
+
+    def __setitem__(self, key, value):
+        self.fields[key] = value
+
+    def currency(self, key):
+        ref_type = self.fields[key].ref_type.lower()
+
+        for currency, symbol in currency_identifiers:
+            if currency in ref_type:
+                return currency, symbol
+
+
 class XBRL:
 
     def __init__(self, xbrl_doc):
 
-        self.fields = {}
+        self.fields = FieldsDataset()
 
         self.EntireInstanceDocument = xbrl_doc
         self.oInstance = etree.fromstring(self.EntireInstanceDocument)
@@ -53,6 +86,7 @@ class XBRL:
     def GetFactValue(self, SeekConcept, ConceptPeriodType):
 
         factValue = None
+        field = None
 
         if ConceptPeriodType == "Instant":
             ContextReference = self.fields['ContextForInstants']
@@ -79,7 +113,10 @@ class XBRL:
                 factValue = None
                 pass
 
-        return factValue
+        if factValue is not None:
+            field = Field(value=factValue, ref_type=oNode.attrib['unitRef'])
+
+        return field
 
     def GetBaseInformation(self):
 
