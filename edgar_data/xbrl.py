@@ -27,7 +27,10 @@ class FieldsDataset:
         self.fields = {}
 
     def __getitem__(self, item):
-        field = self.fields[item]
+        try:
+            field = self.fields[item]
+        except KeyError:
+            return None
 
         if isinstance(field, Field):
             return field.value
