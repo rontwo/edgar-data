@@ -217,7 +217,7 @@ class XBRL:
                         UseContext = ContextID
                         #print(UseContext)
 
-        """
+
         #NOTE: if the DocumentPeriodEndDate is incorrect, this attempts to fix it by looking for a few commonly occuring concepts for the current period...
         if UseContext=="ERROR":
             #print 'if the DocumentPeriodEndDate is incorrect, this attempts to fix it by looking for a few commonly occuring concepts for the current period...'                    
@@ -244,6 +244,7 @@ class XBRL:
                     if len(oNode4):
                         #Not the right context
                         #print "Note4: " + oNode4[0].text
+                        pass
                     else:
                         ##print "SELECTED CONTEXT: " + oNodelist3.Item(j).selectSingleNode("./@id").text 'oNodelist3(j).XML
                         ContextID = j.get("id")
@@ -253,7 +254,6 @@ class XBRL:
                     ##print j.XML
                                     
             #EndDate = ContextPeriod
-            """
 
         ContextForInstants = UseContext
         self.fields['ContextForInstants'] = ContextForInstants

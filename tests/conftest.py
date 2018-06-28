@@ -9,6 +9,20 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['Royal Dutch Shell'],
+        '2017_revenue': 305,
+        'ticker': 'RDSA',
+        'cik': '0001306965',
+        'currency': 'usd'
+    },
+    {
+        'company': ['SINOPEC SHANGHAI'],
+        '2017_revenue': 92,
+        'ticker': 'SHI',
+        'cik': '0000908732',
+        'currency': 'cny'
+    },
+    {
         'company': ['Toyota'],
         '2017_revenue': 27597,
         'ticker': 'TM',
