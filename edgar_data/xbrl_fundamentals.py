@@ -990,6 +990,8 @@ class FundamentantalAccountingConcepts:
         except:
             pass
 
+        self.xbrl.fields['ResearchAndDevelopmentExpense'] = self.xbrl.GetFactValue('us-gaap:ResearchAndDevelopmentExpense', 'Duration') or 0
+
         try:
             self.ifrs()
         except:
@@ -999,34 +1001,14 @@ class FundamentantalAccountingConcepts:
         """
         Labels found at:
         https://www.ifrs.org/-/media/feature/standards/taxonomy/2018/2018-taxonomy-view-with-definitions.xlsx?la=en&hash=5532C37EEAD057F62AA9AA1C920E33F43B3140FD
-
-        operating expenses (found AdministrativeExpense but not the same thing)
-
-        rent expenses
-
-        other operating income (found RevenueAndOperatingIncome and OtherOperatingIncomeExpense)
-
-        operating income/loss
-
-        interest and debt expense
-
-        EBITDA (or IncomeFromContinuingOperationsBeforeTax)
-
-        net income/loss
-
-        net cash flow (operating)
-
-        net cash flow (investing)
-
-        net cash flow (financing)
         """
 
         # These are the ones also found on GAAP:
         if self.xbrl.fields['Revenues'] == 0:
             self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:Revenue', 'Duration') or 0
 
-        if self.xbrl.fields['Assets'] == 0:
-            self.xbrl.fields['Assets'] = self.xbrl.GetFactValue('ifrs-full:Assets', 'Instant') or 0
+        #if self.xbrl.fields['Assets'] == 0:
+        #    self.xbrl.fields['Assets'] = self.xbrl.GetFactValue('ifrs-full:Assets', 'Instant') or 0
 
         if self.xbrl.fields['CurrentAssets'] == 0:
             self.xbrl.fields['CurrentAssets'] = self.xbrl.GetFactValue('ifrs-full:CurrentAssets', 'Instant') or 0
@@ -1055,12 +1037,50 @@ class FundamentantalAccountingConcepts:
         if self.xbrl.fields['GrossProfit'] == 0:
             self.xbrl.fields['GrossProfit'] = self.xbrl.GetFactValue('ifrs-full:GrossProfit', 'Duration') or 0
 
+        if self.xbrl.fields['NetCashFlowsOperating'] == 0:
+            self.xbrl.fields['NetCashFlowsOperating'] = self.xbrl.GetFactValue('ifrs-full:CashFlowsFromUsedInOperatingActivities', 'Duration') or 0
+
+        if self.xbrl.fields['NetCashFlowsInvesting'] == 0:
+            self.xbrl.fields['NetCashFlowsInvesting'] = self.xbrl.GetFactValue('ifrs-full:CashFlowsFromUsedInInvestingActivities', 'Duration') or 0
+
+        if self.xbrl.fields['NetCashFlowsFinancing'] == 0:
+            self.xbrl.fields['NetCashFlowsFinancing'] = self.xbrl.GetFactValue('ifrs-full:CashFlowsFromUsedInFinancingActivities', 'Duration') or 0
+
         if self.xbrl.fields['NetCashFlow'] == 0:
             # Might also try to use IncreaseDecreaseInCashAndCashEquivalentsBeforeEffectOfExchangeRateChanges ??
             # Makes sense since many 20-F forms can use foreign currencies
             self.xbrl.fields['NetCashFlow'] = self.xbrl.GetFactValue('ifrs-full:IncreaseDecreaseInCashAndCashEquivalents', 'Duration') or 0
+            if self.xbrl.fields['NetCashFlow'] == 0:
+                self.xbrl.fields['NetCashFlow'] = self.xbrl.fields['NetCashFlowsOperating'] +\
+                                                  self.xbrl.fields['NetCashFlowsInvesting'] +\
+                                                  self.xbrl.fields['NetCashFlowsFinancing']
+
+
+        if self.xbrl.fields['OperatingExpenses'] == 0:
+            self.xbrl.fields['OperatingExpenses'] = self.xbrl.GetFactValue('ifrs-full:OperatingExpense', 'Duration') or 0
+
+        if self.xbrl.fields['OperatingIncomeLoss'] == 0:
+            self.xbrl.fields['OperatingIncomeLoss'] = self.xbrl.GetFactValue('ifrs-full:ProfitLossBeforeTax', 'Duration') or 0
+
+        if self.xbrl.fields['InterestAndDebtExpense'] == 0:
+            self.xbrl.fields['InterestAndDebtExpense'] = self.xbrl.GetFactValue('ifrs-full:InterestExpense', 'Duration') or 0
+
+        if self.xbrl.fields['IncomeFromContinuingOperationsBeforeTax'] == 0:
+            self.xbrl.fields['IncomeFromContinuingOperationsBeforeTax'] = self.xbrl.GetFactValue('ifrs-full:ProfitLossBeforeTax', 'Duration') or 0
+
+        if self.xbrl.fields['NetIncomeLoss'] == 0:
+            self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue('ifrs-full:ProfitLoss', 'Duration') or 0
+
+        if self.xbrl.fields['ResearchAndDevelopmentExpense'] == 0:
+            self.xbrl.fields['ResearchAndDevelopmentExpense'] = self.xbrl.GetFactValue('ifrs-full:ResearchAndDevelopmentExpense', 'Duration') or 0
+
 
         # These are the ones not found on pysec GAAP parsing:
-        self.xbrl.fields['ResearchAndDevelopmentExpense'] = self.xbrl.GetFactValue('ifrs-full:ResearchAndDevelopmentExpense', 'Duration') or 0
 
         self.xbrl.fields['SellingGeneralAndAdministrativeExpense'] = self.xbrl.GetFactValue('ifrs-full:SellingGeneralAndAdministrativeExpense', 'Duration') or 0
+
+        self.xbrl.fields['RentalExpenses'] = self.xbrl.GetFactValue('ifrs-full:RentalExpense', 'Duration') or 0
+
+        self.xbrl.fields['RepairsAndMaintenanceExpense'] = self.xbrl.GetFactValue('ifrs-full:RepairsAndMaintenanceExpense', 'Duration') or 0
+
+        self.xbrl.fields['SalesAndMarketingExpense'] = self.xbrl.GetFactValue('ifrs-full:SalesAndMarketingExpense', 'Duration') or 0

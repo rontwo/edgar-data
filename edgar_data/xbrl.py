@@ -2,6 +2,9 @@
 # This module uses Open Source components. You can find the source code
 # for the full project in the url below:
 # https://github.com/lukerosiak/pysec
+#
+# The GAAP and IFRS data are changed to be None if missing, instead of 0
+
 from collections import namedtuple
 
 from lxml import etree

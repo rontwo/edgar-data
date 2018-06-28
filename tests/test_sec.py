@@ -85,5 +85,7 @@ class TestSEC:
         for doc in docs.all_filings():
             if doc.period_end_date.year == 2017:
                 if doc.xbrl and doc.form_type in ('10-K', '20-F'):
+                    if doc.fields['Assets'] == 0:
+                        import pdb;pdb.set_trace()
                     assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']
                     assert doc.fields.currency('Revenues')[0] == company['currency']
