@@ -141,11 +141,7 @@ class EdgarData:
         all_filings = FilingsDataset()
 
         for filing in self._get_all_filings_index_pages(cik, date_start, date_end, calendar_year):
-            retriever = FilingRetriever(url=filing['url'],
-                                        form=filing['form'],
-                                        tree=filing['tree'],
-                                        cik=cik)
-            filing_html, xbrl = retriever.retrieve()
+            filing_html, xbrl = self.retrieve(index_url=filing['url'], form=filing['form'], tree=filing['tree'], cik=cik)
 
             all_filings.add_filing(
                 EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report']))
@@ -236,16 +232,13 @@ class EdgarData:
         for filing_page in self._get_filing_index_page(cik, '8-K', datea, dateb):
             yield filing_page
 
-
-class FilingRetriever:
-
-    def __init__(self, url, form, tree, cik):
-        self.cik = cik
-        self.tree = tree
-        self.form = form
-        self.url = url
-        self.html = ''
-        self.xbrl = None
+    # def __init__(self, url, form, tree, cik):
+    #     self.cik = cik
+    #     self.tree = tree
+    #     self.form = form
+    #     self.url = url
+    #     self.html = ''
+    #     self.xbrl = None
 
     def _retrieve_document(self, url):
         try:
@@ -256,14 +249,14 @@ class FilingRetriever:
 
         return resp.text
 
-    def retrieve(self):
-        full_filing_doc = self._retrieve_document(self._html_url())
+    def retrieve(self, index_url, form, tree, cik):
+        full_filing_doc = self._retrieve_document(self._html_url(form, tree, index_url))
         filing = self._clean_html(full_filing_doc)
         xbrl = None
 
-        if self.form in ('10-K', '10-Q', '20-F'):
+        if form in ('10-K', '10-Q', '20-F'):
             try:
-                xbrl_doc = self._retrieve_document(self._xbrl_url())
+                xbrl_doc = self._retrieve_document(self._xbrl_url(tree, index_url))
 
                 # If using the python-xbrl library (this actually doesn't work, as every info is filled as 0.0):
                 #xbrl_parser = XBRLParser(precision=0)
@@ -276,12 +269,12 @@ class FilingRetriever:
 
         return filing, xbrl
 
-    def _document_url(self, table_summary, file_description):
+    def _document_url(self, table_summary, file_description, tree, index_url):
         # link is relative (i.e. /Archives/edgar/data/... )
-        link = self.tree.xpath('//*[@id="formDiv"]//table[@summary="{0}"]'
+        link = tree.xpath('//*[@id="formDiv"]//table[@summary="{0}"]'
                                '//*[contains(text(),"{1}")]/..//a/@href'.format(table_summary, file_description))
         if not link:
-            raise FilingNotFound('Could not find the file (type: {0}) at {1}'.format(file_description, self.url))
+            raise FilingNotFound('Could not find the file (type: {0}) at {1}'.format(file_description, index_url))
 
         # Safely insert https://www.sec.gov in the link
         url_parts = list(urlparse(link[0]))
@@ -291,13 +284,17 @@ class FilingRetriever:
 
         return url
 
-    def _html_url(self):
+    def _html_url(self, form, tree, index_url):
         return self._document_url(table_summary="Document Format Files",
-                                  file_description=self.form)
+                                  file_description=form,
+                                  tree=tree,
+                                  index_url=index_url)
 
-    def _xbrl_url(self):
+    def _xbrl_url(self, tree, index_url):
         return self._document_url(table_summary="Data Files",
-                                  file_description="XBRL INSTANCE DOCUMENT")
+                                  file_description="XBRL INSTANCE DOCUMENT",
+                                  tree=tree,
+                                  index_url=index_url)
 
     def _clean_html(self, content):
         font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
