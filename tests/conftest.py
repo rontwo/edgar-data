@@ -53,6 +53,18 @@ def sec():
         '2017_revenue': 237,
         'cik': '0000034088',
         'currency': 'usd'
+    },
+    {
+        'company': ['BOEING CO'],
+        '2017_revenue': 93,
+        'cik': '0000012927',
+        'currency': 'usd'
+    },
+    {
+        'company': ['BOSTON SCIENTIFIC'],
+        '2017_revenue': 9,
+        'cik': '0000885725',
+        'currency': 'usd'
     }
 ])
 def company(request):

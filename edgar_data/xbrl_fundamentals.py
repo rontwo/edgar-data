@@ -356,6 +356,11 @@ class FundamentantalAccountingConcepts:
                                 "us-gaap:IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest",
                                 "Duration")
 
+        #self.xbrl.fields['NetIncomeAttributableToShareholders'] = self.xbrl.GetFactValue(
+        #    "us-gaap:ProfitLossAttributableToOwnersOfParent", "Duration")
+        #if self.xbrl.fields['NetIncomeAttributableToShareholders'] is None:
+        #    self.xbrl.fields['NetIncomeAttributableToShareholders'] = self.xbrl.fields['NetIncomeLoss']
+
         # NetIncomeAvailableToCommonStockholdersBasic
         self.xbrl.fields['NetIncomeAvailableToCommonStockholdersBasic'] = self.xbrl.GetFactValue(
             "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic", "Duration")
@@ -775,6 +780,9 @@ class FundamentantalAccountingConcepts:
         # These are the ones also found on GAAP:
         if self.xbrl.fields['Revenues'] is None:
             self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:Revenue', 'Duration')
+
+        self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue(
+            "ifrs-full:ProfitLossAttributableToOwnersOfParent", "Duration")
 
         if self.xbrl.fields['Assets'] is None:
             self.xbrl.fields['Assets'] = self.xbrl.GetFactValue('ifrs-full:Assets', 'Instant')
