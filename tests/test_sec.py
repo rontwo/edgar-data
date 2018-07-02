@@ -61,7 +61,7 @@ class TestSEC:
         # Should return only year = 2016
         docs = sec.get_form_data(cik='0000789019', calendar_year=2016)
 
-        for doc in docs.all_filings():
+        for doc in docs:
             assert doc.period_end_date.year == 2016
 
         min_date = datetime(2016, 1, 1)
@@ -69,7 +69,7 @@ class TestSEC:
 
         docs = sec.get_form_data(cik='0000789019', date_start=min_date, date_end=max_date)
 
-        for doc in docs.all_filings():
+        for doc in docs:
             assert min_date < doc.period_end_date < max_date
 
     def test_get_form_data(self, sec, company):
@@ -82,7 +82,7 @@ class TestSEC:
 
         docs = sec.get_form_data(cik=cik, calendar_year=2017)
 
-        for doc in docs.all_filings():
+        for doc in docs:
             if doc.period_end_date.year == 2017:
                 if doc.xbrl and doc.form_type in ('10-K', '20-F'):
                     assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']

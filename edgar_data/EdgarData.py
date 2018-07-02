@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from requests import RequestException
 from lxml import html
 
-from edgar_data.FilingsDataset import FilingsDataset, EdgarForm
 from .xbrl import XBRL
 
 
@@ -138,12 +137,12 @@ class EdgarData:
             date_start = None
             date_end = None
 
-        all_filings = FilingsDataset()
+        all_filings = []
 
         for filing in self._get_all_filings_index_pages(cik, date_start, date_end, calendar_year):
             filing_html, xbrl = self.retrieve(index_url=filing['url'], form=filing['form'], tree=filing['tree'], cik=cik)
 
-            all_filings.add_filing(
+            all_filings.append(
                 EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report'], filing['url']))
 
         return all_filings
@@ -314,3 +313,33 @@ class EdgarData:
         no_style = re.sub(style_attrs, '', no_font)
 
         return no_style
+
+
+class UnknownFilingType(Exception):
+    """A filing of unknown type has been found."""
+
+
+class EdgarForm:
+
+    def __init__(self, html, xbrl, cik, form_type, period_of_report, url):
+        """Filing class. Access XBRL data through the `xbrl` attribute.
+        See pysec XBRL class for more details on how to get DEI or GAAP data.
+
+        :Example:
+
+        >>> filing = EdgarForm(...)
+        >>> filing.fields['TradingSymbol']  # returns the ticker
+        """
+        self.html = html
+        self.xbrl = xbrl
+        if xbrl:
+            self.fields = xbrl.fields
+        else:
+            self.fields = None
+        self.cik = cik
+        self.form_type = form_type
+        self.period_end_date = datetime.datetime.strptime(period_of_report, "%Y-%m-%d")  # type: datetime.datetime
+        self.url = url
+
+    def __repr__(self):
+        return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)
