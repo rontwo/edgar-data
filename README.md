@@ -20,7 +20,7 @@ cik = sec.get_cik(ticker='msft')
 docs = sec.get_form_data(cik, year=2010)
 
 # Accessing XBRL for 10-K and 20-F forms:
-for doc in docs.all_filings():
+for doc in docs:
     if doc.form_type in ('10-K', '20-F'):
         if not doc.xbrl:
             continue

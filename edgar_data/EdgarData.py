@@ -134,7 +134,6 @@ class EdgarData:
         """
         cik = '0'*(10-len(cik))+cik
 
-
         if calendar_year:
             date_start = None
             date_end = None
