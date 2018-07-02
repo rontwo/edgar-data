@@ -88,7 +88,7 @@ class TestSEC:
                     assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']
                     assert doc.fields.currency('Revenues')[0] == company['currency']
                     print('==========')
-                    print(company['company'])
+                    print(company['company'], doc.filing_date)
                     print(doc.url)
                     print('Revenues:', doc.fields['Revenues'])
                     print('Assets:', doc.fields['Assets'])

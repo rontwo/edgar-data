@@ -144,7 +144,7 @@ class EdgarData:
             filing_html, xbrl = self.retrieve(index_url=filing['url'], form=filing['form'], tree=filing['tree'], cik=cik)
 
             all_filings.append(
-                EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report'], filing['url']))
+                EdgarForm(filing_html, xbrl, cik, filing))
 
         return all_filings
 
@@ -154,7 +154,7 @@ class EdgarData:
         if dateb:
             dateb = dateb.strftime("%Y-%m-%d")
 
-        return itertools.chain(self._get_filing_index_yearly(cik, datea, dateb, calendar_year),
+        return itertools.chain(self._get_filing_index_annual(cik, datea, dateb, calendar_year),
                                self._get_filings_index_10q(cik, datea, dateb, calendar_year),
                                self._get_filings_index_8k(cik, datea, dateb, calendar_year))
 
@@ -190,13 +190,15 @@ class EdgarData:
             tree = html.fromstring(r.content)
 
             period_of_report = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div/text()")
+            filing_date = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div[1]/text()")
 
-            if not period_of_report:
+            if not period_of_report or not filing_date:
                 raise ReportError('Something wrong happened when fetching {0} {1} filing.'.format(cik, form))
 
-            yield {'form': form, 'url': filing_url, 'tree': tree, 'period_of_report': period_of_report[0]}
+            yield {'form': form, 'url': filing_url, 'tree': tree,
+                   'period_of_report': period_of_report[0], 'filing_date': filing_date[0]}
 
-    def _get_filing_index_yearly(self, cik, datea, dateb, calendar_year):
+    def _get_filing_index_annual(self, cik, datea, dateb, calendar_year):
         if calendar_year:
             datea = '{}-01-01'.format(calendar_year)
             dateb = '{}-12-31'.format(calendar_year+1)
@@ -322,7 +324,7 @@ class UnknownFilingType(Exception):
 
 class EdgarForm:
 
-    def __init__(self, html, xbrl, cik, form_type, period_of_report, url):
+    def __init__(self, html, xbrl, cik, filing):
         """Filing class. Access XBRL data through the `xbrl` attribute.
         See pysec XBRL class for more details on how to get DEI or GAAP data.
 
@@ -338,9 +340,12 @@ class EdgarForm:
         else:
             self.fields = None
         self.cik = cik
-        self.form_type = form_type
-        self.period_end_date = datetime.datetime.strptime(period_of_report, "%Y-%m-%d")  # type: datetime.datetime
-        self.url = url
+        self.form_type = filing['form']
+        self.period_end_date = datetime.datetime.strptime(filing['period_of_report'],
+                                                          "%Y-%m-%d")  # type: datetime.datetime
+        self.filing_date = datetime.datetime.strptime(filing['filing_date'],
+                                                          "%Y-%m-%d")  # type: datetime.datetime
+        self.url = filing['url']
 
     def __repr__(self):
         return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)
