@@ -105,7 +105,7 @@ class EdgarData:
             # could not find a valid name
             raise CIKNotFound('Names list exhausted or bad ticker.')
 
-        return cik
+        return '0'*(10-len(cik))+cik
 
     def get_form_data(self, cik, date_start=None, date_end=None, calendar_year=None):
         """Retrieves information about a company's filings from the SEC.
@@ -132,6 +132,8 @@ class EdgarData:
         :return: All the found filings.
         :rtype: FilingsDataset
         """
+        cik = '0'*(10-len(cik))+cik
+
 
         if calendar_year:
             date_start = None
