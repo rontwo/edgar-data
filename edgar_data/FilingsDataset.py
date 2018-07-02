@@ -8,7 +8,7 @@ class UnknownFilingType(Exception):
 
 class EdgarForm:
 
-    def __init__(self, html, xbrl, cik, form_type, period_of_report):
+    def __init__(self, html, xbrl, cik, form_type, period_of_report, url):
         """Filing class. Access XBRL data through the `xbrl` attribute.
         See pysec XBRL class for more details on how to get DEI or GAAP data.
 
@@ -26,6 +26,7 @@ class EdgarForm:
         self.cik = cik
         self.form_type = form_type
         self.period_end_date = datetime.strptime(period_of_report, "%Y-%m-%d")  # type: datetime
+        self.url = url
 
     def __repr__(self):
         return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)

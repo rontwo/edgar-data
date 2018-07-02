@@ -144,7 +144,7 @@ class EdgarData:
             filing_html, xbrl = self.retrieve(index_url=filing['url'], form=filing['form'], tree=filing['tree'], cik=cik)
 
             all_filings.add_filing(
-                EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report']))
+                EdgarForm(filing_html, xbrl, cik, filing['form'], filing['period_of_report'], filing['url']))
 
         return all_filings
 
