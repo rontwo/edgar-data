@@ -89,7 +89,8 @@ class TestSEC:
                     assert doc.fields.currency('Revenues')[0] == company['currency']
                     print('==========')
                     print(company['company'], doc.filing_date)
-                    print(doc.url)
+                    print(doc.index_url)
+                    print(doc.text_url)
                     print('Revenues:', doc.fields['Revenues'])
                     print('Cost of Revenues:', doc.fields['CostOfRevenue'])
                     print('GrossProfit:', doc.fields['GrossProfit'])
