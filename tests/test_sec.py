@@ -86,7 +86,7 @@ class TestSEC:
             if doc.period_end_date.year == 2017:
                 if doc.xbrl and doc.form_type in ('10-K', '20-F'):
                     assert round(doc.fields['Revenues'] / 1e9) == company['2017_revenue']
-                    assert doc.fields.currency('Revenues')[0] == company['currency']
+                    assert doc.fields.currency('Revenues').code == company['currency']
                     print('==========')
                     print(company['company'], doc.filing_date)
                     print(doc.index_url)

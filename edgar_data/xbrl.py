@@ -115,7 +115,6 @@ class XBRL:
                 pass
 
         if factValue is not None:
-            print(oNode.attrib['unitRef'])
             field = Field(value=factValue, unit_ref=oNode.attrib['unitRef'])
 
         return field

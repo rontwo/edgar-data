@@ -13,58 +13,58 @@ def sec():
         '2017_revenue': 305,
         'ticker': 'RDSA',
         'cik': '0001306965',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['SINOPEC SHANGHAI'],
         '2017_revenue': 92,
         'ticker': 'SHI',
         'cik': '0000908732',
-        'currency': 'cny'
+        'currency': 'CNY'
     },
     {
         'company': ['Toyota'],
         '2017_revenue': 27597,
         'ticker': 'TM',
         'cik': '0001094517',
-        'currency': 'jpy'
+        'currency': 'JPY'
     },
     {
         'company': ['Walmart Inc'],
         '2017_revenue': 486,
         'cik': '0000104169',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['BERKSHIRE HATHAWAY INC'],
         '2017_revenue': 242,
         'ticker': 'BRKA',
         'cik': '0001067983',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['Apple inc'],
         '2017_revenue': 229,
         'cik': '0000320193',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['Exxon Mobil'],
         '2017_revenue': 237,
         'cik': '0000034088',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['BOEING CO'],
         '2017_revenue': 93,
         'cik': '0000012927',
-        'currency': 'usd'
+        'currency': 'USD'
     },
     {
         'company': ['BOSTON SCIENTIFIC'],
         '2017_revenue': 9,
         'cik': '0000885725',
-        'currency': 'usd'
+        'currency': 'USD'
     }
 ])
 def company(request):
