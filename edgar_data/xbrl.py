@@ -6,19 +6,15 @@
 # The GAAP and IFRS data are changed to be None if missing, instead of 0
 
 from collections import namedtuple
-
-from lxml import etree
-from .xbrl_fundamentals import FundamentantalAccountingConcepts
 import re
 
+from lxml import etree
 
-Field = namedtuple('Field', ['value', 'ref_type'])
+from edgar_data.currency import find_currency
+from .xbrl_fundamentals import FundamentantalAccountingConcepts
 
-currency_identifiers = (
-    ("usd", "$"),
-    ("jpy", "¥"),
-    ("cny", "cny")
-)
+
+Field = namedtuple('Field', ['value', 'unit_ref'])
 
 
 class FieldsDataset:
@@ -41,11 +37,9 @@ class FieldsDataset:
         self.fields[key] = value
 
     def currency(self, key):
-        ref_type = self.fields[key].ref_type.lower()
+        unit_ref = self.fields[key].unit_ref
 
-        for currency, symbol in currency_identifiers:
-            if currency in ref_type:
-                return currency, symbol
+        return find_currency(unit_ref)
 
 
 class XBRL:
@@ -121,7 +115,8 @@ class XBRL:
                 pass
 
         if factValue is not None:
-            field = Field(value=factValue, ref_type=oNode.attrib['unitRef'])
+            print(oNode.attrib['unitRef'])
+            field = Field(value=factValue, unit_ref=oNode.attrib['unitRef'])
 
         return field
 
