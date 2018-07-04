@@ -70,7 +70,7 @@ class TestSEC:
         docs = sec.get_form_data(cik='0000789019', date_start=min_date, date_end=max_date)
 
         for doc in docs:
-            assert min_date < doc.period_end_date < max_date
+            assert min_date < doc.filing_date < max_date
 
     def test_invalid_field_currency(self, sec):
         docs = sec.get_form_data(cik='0000789019', calendar_year=2016)

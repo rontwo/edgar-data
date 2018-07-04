@@ -191,7 +191,7 @@ class EdgarData:
             tree = html.fromstring(r.content)
 
             period_of_report = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div/text()")
-            filing_date = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div[1]/text()")
+            filing_date = tree.xpath("//*[contains(text(),'Filing Date')]/following-sibling::div[1]/text()")
 
             if not period_of_report or not filing_date:
                 raise ReportError('Something wrong happened when fetching {0} {1} filing.'.format(cik, form))
@@ -350,7 +350,7 @@ class EdgarForm:
         else:
             self.fields = None
             self.ticker = None
-        
+
         self.cik = cik
         self.form_type = filing['form']
         self.period_end_date = datetime.strptime(filing['period_of_report'],

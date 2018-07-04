@@ -8,6 +8,7 @@
 import re
 
 from lxml import etree
+from lxml.etree import XPathEvalError
 
 from edgar_data.currency import find_currency
 from .xbrl_fundamentals import FundamentantalAccountingConcepts
@@ -88,7 +89,10 @@ class XBRL:
 
     def getNodeList(self, xpath, root=None):
         if not root is not None: root = self.oInstance
-        oNodelist = root.xpath(xpath, namespaces=self.ns)
+        try:
+            oNodelist = root.xpath(xpath, namespaces=self.ns)
+        except XPathEvalError:
+            return []
         return oNodelist
 
     def getNode(self, xpath, root=None):
