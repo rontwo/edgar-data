@@ -346,8 +346,11 @@ class EdgarForm:
         self.xbrl = xbrl
         if xbrl:
             self.fields = xbrl.fields
+            self.ticker = self.fields['TradingSymbol']
         else:
             self.fields = None
+            self.ticker = None
+        
         self.cik = cik
         self.form_type = filing['form']
         self.period_end_date = datetime.strptime(filing['period_of_report'],

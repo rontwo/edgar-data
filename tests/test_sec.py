@@ -95,10 +95,11 @@ class TestSEC:
                     assert round(doc.fields['Revenues'].value / 1e9) == company['2017_revenue']
                     assert doc.fields['Revenues'].currency.code == company['currency']
                     print('==========')
-                    print(company['company'], doc.filing_date)
+                    print(company['company'], doc.ticker, doc.filing_date)
                     print(doc.index_url)
                     print(doc.text_url)
                     print('Revenues:', doc.fields['Revenues'], doc.fields.currency('Revenues'))
+                    print('Assets:', doc.fields['Assets'], doc.fields.currency('Assets'))
                     print('Cost of Revenues:', doc.fields['CostOfRevenue'], doc.fields.currency('CostOfRevenue'))
                     print('GrossProfit:', doc.fields['GrossProfit'], doc.fields.currency('GrossProfit'))
                     print('OperatingIncomeLoss (EBIT):', doc.fields['OperatingIncomeLoss'], doc.fields.currency('OperatingIncomeLoss'))
