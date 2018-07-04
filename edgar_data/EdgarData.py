@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import re
 from urllib.parse import urlencode, urlparse, urlunparse
 import itertools
@@ -35,7 +35,7 @@ class EdgarData:
 
     def __init__(self):
         self.edgar_url = "https://www.sec.gov/cgi-bin/browse-edgar"
-        self.current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.current_date_str = datetime.now().strftime("%Y-%m-%d")
 
     def _default_edgar_query(self):
         return {
@@ -126,11 +126,11 @@ class EdgarData:
         :param calendar_year: Optional. If provided, parameters `date_start` and `date_end` will be ignored,
             and the algorithm will try to retrieve filings for the given year (i.e. period end date within given year).
         :type cik: str
-        :type date_start: datetime object
-        :type date_end: datetime object
+        :type date_start: datetime
+        :type date_end: datetime
         :type calendar_year: int
         :return: All the found filings.
-        :rtype: FilingsDataset
+        :rtype: list(EdgarForm)
         """
         cik = '0'*(10-len(cik))+cik
 
@@ -149,7 +149,7 @@ class EdgarData:
 
         return all_filings
 
-    def _get_all_filings_index_pages(self, cik, datea, dateb, calendar_year):
+    def _get_all_filings_index_pages(self, cik, datea, dateb, calendar_year=None):
         if datea:
             datea = datea.strftime("%Y-%m-%d")
         if dateb:
@@ -199,7 +199,8 @@ class EdgarData:
             yield {'form': form, 'index_url': filing_url, 'tree': tree,
                    'period_of_report': period_of_report[0], 'filing_date': filing_date[0]}
 
-    def _get_filing_index_annual(self, cik, datea, dateb, calendar_year):
+    def _get_filing_index_annual(self, cik, datea, dateb, calendar_year=None):
+        # NOTE: if calendar_year is passed, we will only return filings within that calendar year
         if calendar_year:
             datea = '{}-01-01'.format(calendar_year)
             dateb = '{}-12-31'.format(calendar_year+1)
@@ -207,16 +208,19 @@ class EdgarData:
         for filing_page in self._get_filing_index_page(cik, '10-K', datea, dateb):
             period_of_report = filing_page['period_of_report']
 
-            if period_of_report[:4] == str(calendar_year):
+            # Only proceed if:
+            # (1) calendar_year was not provided (i.e. don't run a check)
+            # (2) calendar_year check passes (i.e. period of report is within calendar year)
+            if not calendar_year or period_of_report[:4] == str(calendar_year):
                 # Period of report year == given end of fiscal year
                 # https://www.investopedia.com/terms/f/fiscalyear.asp
                 yield filing_page
-                return
 
         for filing_page in self._get_filing_index_page(cik, '20-F', datea, dateb):
             yield filing_page
 
-    def _get_filings_index_10q(self, cik, datea, dateb, calendar_year):
+    def _get_filings_index_10q(self, cik, datea, dateb, calendar_year=None):
+        # NOTE: if calendar_year is passed, we will only return filings within that calendar year
         if calendar_year:
             datea = '{}-01-01'.format(calendar_year)
             dateb = '{}-03-31'.format(calendar_year+1)
@@ -224,10 +228,13 @@ class EdgarData:
         for filing_page in self._get_filing_index_page(cik, '10-Q', datea, dateb):
             period_of_report = filing_page['period_of_report']
 
-            if period_of_report[:4] == str(calendar_year):
+            # Only proceed if:
+            # (1) calendar_year was not provided (i.e. don't run a check)
+            # (2) calendar_year check passes (i.e. period of report is within calendar year)
+            if not calendar_year or period_of_report[:4] == str(calendar_year):
                 yield filing_page
 
-    def _get_filings_index_8k(self, cik, datea, dateb, calendar_year):
+    def _get_filings_index_8k(self, cik, datea, dateb, calendar_year=None):
         if calendar_year:
             datea = '{}-01-01'.format(calendar_year)
             dateb = '{}-12-31'.format(calendar_year)
@@ -343,10 +350,10 @@ class EdgarForm:
             self.fields = None
         self.cik = cik
         self.form_type = filing['form']
-        self.period_end_date = datetime.datetime.strptime(filing['period_of_report'],
-                                                          "%Y-%m-%d")  # type: datetime.datetime
-        self.filing_date = datetime.datetime.strptime(filing['filing_date'],
-                                                          "%Y-%m-%d")  # type: datetime.datetime
+        self.period_end_date = datetime.strptime(filing['period_of_report'],
+                                                 "%Y-%m-%d")  # type: datetime.datetime
+        self.filing_date = datetime.strptime(filing['filing_date'],
+                                             "%Y-%m-%d")  # type: datetime.datetime
         self.index_url = filing['index_url']
         self.text_url = text_url
 
