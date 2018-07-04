@@ -11,7 +11,7 @@ setup(
     ],
     description="A tool for retrieving information from EDGAR.",
     name="edgar_data",
-    version='0.2.0',
+    version='0.2.9',
     url='https://github.com/gaussian/edgar-data/',
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'pytest-cov', 'pytest-mock'],
