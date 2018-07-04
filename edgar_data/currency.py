@@ -7,7 +7,7 @@ Currency = namedtuple('Currency', ['code', 'symbol', 'name'])
 
 currency_identifiers = {}
 
-iso_currency_re = re.compile('iso4217_?[A-Z]{3}')
+iso_currency_re = re.compile('iso4217:[A-Z]{3}')
 
 
 def possible_currency_from_unit_ref(unit_ref):

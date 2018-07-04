@@ -21,7 +21,10 @@ class Field:
 
     @property
     def currency(self):
-        return find_currency(self.unit_ref)
+        if self.unit_ref is not None:
+            return find_currency(self.unit_ref)
+        else:
+            return None
 
     def __add__(self, other):
         return Field(self.value + other.value, self.unit_ref)
@@ -132,7 +135,11 @@ class XBRL:
                 pass
 
         if factValue is not None:
-            field = Field(value=factValue, unit_ref=oNode.attrib['unitRef'])
+            unit = self.getNode("//xbrli:unit[@id='" + oNode.attrib['unitRef'] + "']//xbrli:measure")
+            if unit is not None:
+                field = Field(value=factValue, unit_ref=unit.text)
+            else:
+                field = Field(value=factValue, unit_ref=None)
 
         return field
 

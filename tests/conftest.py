@@ -10,7 +10,7 @@ def sec():
 @pytest.fixture(params=[
     {
         'company': ['INTERNATIONAL BUSINESS MACHINES'],
-        '2017_revenue': 305,
+        '2017_revenue': 79,
         'ticker': 'IBM',
         'cik': '0000051143',
         'currency': 'USD'
