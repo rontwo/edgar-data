@@ -14,7 +14,10 @@ from edgar_data.currency import find_currency
 from .xbrl_fundamentals import FundamentantalAccountingConcepts
 
 
-Field = namedtuple('Field', ['value', 'unit_ref'])
+class Field:
+    def __init__(self, value, unit_ref):
+        self.value = value
+        self.unit_ref = unit_ref
 
 
 class FieldsDataset:
@@ -37,9 +40,13 @@ class FieldsDataset:
         self.fields[key] = value
 
     def currency(self, key):
-        unit_ref = self.fields[key].unit_ref
+        try:
+            unit_ref = self.fields[key].unit_ref
+            currency_obj = find_currency(unit_ref)
+        except AttributeError:
+            raise ValueError("Could not get currency for {}".format(key))
 
-        return find_currency(unit_ref)
+        return currency_obj
 
 
 class XBRL:
