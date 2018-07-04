@@ -303,7 +303,7 @@ class EdgarData:
 
     def _xbrl_url(self, tree, index_url):
         return self._document_url(table_summary="Data Files",
-                                  file_description="XBRL INSTANCE DOCUMENT",
+                                  file_description="EX-101.INS",
                                   tree=tree,
                                   index_url=index_url)
 
