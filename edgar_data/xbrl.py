@@ -5,7 +5,6 @@
 #
 # The GAAP and IFRS data are changed to be None if missing, instead of 0
 
-from collections import namedtuple
 import re
 
 from lxml import etree
@@ -19,6 +18,19 @@ class Field:
         self.value = value
         self.unit_ref = unit_ref
 
+    @property
+    def currency(self):
+        return find_currency(self.unit_ref)
+
+    def __add__(self, other):
+        return Field(self.value + other.value, self.unit_ref)
+
+    def __sub__(self, other):
+        return Field(self.value - other.value, self.unit_ref)
+
+    def __str__(self):
+        return str(self.value)
+
 
 class FieldsDataset:
 
@@ -31,22 +43,16 @@ class FieldsDataset:
         except KeyError:
             return None
 
-        if isinstance(field, Field):
-            return field.value
-        else:
-            return field
+        return field
 
     def __setitem__(self, key, value):
         self.fields[key] = value
 
     def currency(self, key):
-        try:
-            unit_ref = self.fields[key].unit_ref
-            currency_obj = find_currency(unit_ref)
-        except AttributeError:
-            raise ValueError("Could not get currency for {}".format(key))
-
-        return currency_obj
+        if isinstance(self[key], Field):
+            return self.fields[key].currency
+        else:
+            return None
 
 
 class XBRL:

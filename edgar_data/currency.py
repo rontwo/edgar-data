@@ -1,7 +1,7 @@
 # Adapted from python-money:
 # https://github.com/poswald/python-money
 import re
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
 Currency = namedtuple('Currency', ['code', 'symbol', 'name'])
 
@@ -24,6 +24,8 @@ def find_currency(unit_ref):
     for possible_currency in possible_currency_from_unit_ref(unit_ref):
         if possible_currency in currency_identifiers:
             return currency_identifiers[possible_currency]
+
+    return None
 
 
 currency_identifiers['AED'] = Currency('AED', u'', u'UAE Dirham')
