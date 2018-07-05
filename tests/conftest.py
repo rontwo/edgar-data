@@ -9,6 +9,19 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['Tesla, Inc'],
+        '2017_revenue': 12,
+        'cik': '0001318605',
+        'currency': 'USD'
+    },
+    # {
+    #     'company': ['Hudson Ltd'],
+    #     '2017_revenue': 79,
+    #     'ticker': 'IBM',
+    #     'cik': '0001714368',
+    #     'currency': 'USD'
+    # },
+    {
         'company': ['INTERNATIONAL BUSINESS MACHINES'],
         '2017_revenue': 79,
         'ticker': 'IBM',

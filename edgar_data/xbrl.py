@@ -32,6 +32,9 @@ class Field:
     def __sub__(self, other):
         return Field(self.value - other.value, self.unit_ref)
 
+    def __float__(self):
+        return float(self.value)
+
     def __str__(self):
         return str(self.value)
 
@@ -245,12 +248,14 @@ class XBRL:
         #NOTE: if the DocumentPeriodEndDate is incorrect, this attempts to fix it by looking for a few commonly occuring concepts for the current period...
         if UseContext=="ERROR":
             #print 'if the DocumentPeriodEndDate is incorrect, this attempts to fix it by looking for a few commonly occuring concepts for the current period...'                    
-            oNodelist_Error = self.getNode("//dei:DocumentPeriodEndDate | //us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock | //us-gaap:SignificantAccountingPoliciesTextBlock")
+            oNodelist_Error = self.getNode("//dei:DocumentPeriodEndDate")
+            if oNodelist_Error is None:
+                oNodelist_Error = self.getNode("//us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock | //us-gaap:SignificantAccountingPoliciesTextBlock")
             ##print "Nodelist, trying to find alternative: " + oNodelist_Error.length
             
             ContextID = oNodelist_Error.get('contextRef')
             ContextPeriod = self.getNode("//xbrli:context[@id='" + ContextID + "']/xbrli:period/xbrli:endDate").text
-            
+
             #print "Found Alternative: " + ContextPeriod
             
             oNodelist3 = self.getNodeList("//xbrli:context[xbrli:period/xbrli:instant='" + ContextPeriod + "']")
