@@ -107,7 +107,8 @@ class EdgarData:
 
         return '0'*(10-len(cik))+cik
 
-    def get_form_data(self, cik, date_start=None, date_end=None, calendar_year=None, form_types=None):
+    def get_form_data(self, cik, date_start=None, date_end=None, calendar_year=None,
+                      fetch_html=True, fetch_xbrl=True, form_types=None):
         """Retrieves information about a company's filings from the SEC.
         Based on: https://github.com/lukerosiak/pysec
 
@@ -125,11 +126,15 @@ class EdgarData:
         :param date_end: Optional. Date to.
         :param calendar_year: Optional. If provided, parameters `date_start` and `date_end` will be ignored,
             and the algorithm will try to retrieve filings for the given year (i.e. period end date within given year).
+        :param fetch_html: Defaults to True.
+        :param fetch_xbrl: Defaults to True.
         :param form_types: Optional. List of form types to be downloaded. Defaults to all forms.
         :type cik: str
         :type date_start: datetime
         :type date_end: datetime
         :type calendar_year: int
+        :type fetch_html: bool
+        :type fetch_xbrl: bool
         :type form_types: list[str]
         :return: All the found filings.
         :rtype: list(EdgarForm)
@@ -147,7 +152,8 @@ class EdgarData:
 
         for filing in self._get_all_filings_index_pages(cik, form_types, date_start, date_end, calendar_year):
             text_url, filing_html, xbrl = self.retrieve(
-                index_url=filing['index_url'], form=filing['form'], tree=filing['tree'])
+                index_url=filing['index_url'], form=filing['form'], tree=filing['tree'],
+                fetch_html=fetch_html, fetch_xbrl=fetch_xbrl)
 
             all_filings.append(
                 EdgarForm(filing_html, xbrl, cik, text_url, filing))
@@ -272,13 +278,16 @@ class EdgarData:
 
         return resp.text
 
-    def retrieve(self, index_url, form, tree):
-        text_url = self._html_url(form, tree, index_url)
-        full_filing_doc = self._retrieve_document(text_url)
-        filing = self._clean_html(full_filing_doc)
+    def retrieve(self, index_url, form, tree, fetch_html, fetch_xbrl):
+        filing = None
         xbrl = None
 
-        if form in ('10-K', '10-Q', '20-F'):
+        text_url = self._html_url(form, tree, index_url)
+        if fetch_html:
+            full_filing_doc = self._retrieve_document(text_url)
+            filing = self._clean_html(full_filing_doc)
+
+        if fetch_xbrl and form in ('10-K', '10-Q', '20-F'):
             try:
                 xbrl_doc = self._retrieve_document(self._xbrl_url(tree, index_url))
 
