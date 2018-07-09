@@ -107,7 +107,7 @@ class EdgarData:
 
         return '0'*(10-len(cik))+cik
 
-    def get_form_data(self, cik, date_start=None, date_end=None, calendar_year=None,
+    def get_form_data(self, cik, date_start=None, date_end=None,
                       fetch_html=True, fetch_xbrl=True, form_types=None):
         """Retrieves information about a company's filings from the SEC.
         Based on: https://github.com/lukerosiak/pysec
@@ -124,33 +124,29 @@ class EdgarData:
         :param cik: Company's CIK.
         :param date_start: Optional. Date from.
         :param date_end: Optional. Date to.
-        :param calendar_year: Optional. If provided, parameters `date_start` and `date_end` will be ignored,
-            and the algorithm will try to retrieve filings for the given year (i.e. period end date within given year).
         :param fetch_html: Defaults to True.
         :param fetch_xbrl: Defaults to True.
         :param form_types: Optional. List of form types to be downloaded. Defaults to all forms.
         :type cik: str
         :type date_start: datetime
         :type date_end: datetime
-        :type calendar_year: int
         :type fetch_html: bool
         :type fetch_xbrl: bool
         :type form_types: list[str]
         :return: All the found filings.
         :rtype: list(EdgarForm)
         """
-        cik = '0'*(10-len(cik))+cik
+        if date_start is None and date_end is None:
+            raise ValueError("Please provide either a date_start or a date_end argument to get_form_data.")
 
         if form_types is None:
             form_types = ['10-K', '10-Q', '8-K', '20-F', '6-K']
 
-        if calendar_year:
-            date_start = None
-            date_end = None
+        cik = '0'*(10-len(cik))+cik
 
         all_filings = []
 
-        for filing in self._get_all_filings_index_pages(cik, form_types, date_start, date_end, calendar_year):
+        for filing in self._get_all_filings_index_pages(cik, form_types, date_start, date_end):
             text_url, filing_html, xbrl = self.retrieve(
                 index_url=filing['index_url'], form=filing['form'], tree=filing['tree'],
                 fetch_html=fetch_html, fetch_xbrl=fetch_xbrl)
@@ -160,7 +156,7 @@ class EdgarData:
 
         return all_filings
 
-    def _get_all_filings_index_pages(self, cik, form_types, datea, dateb, calendar_year=None):
+    def _get_all_filings_index_pages(self, cik, form_types, datea, dateb):
         if datea:
             datea = datea.strftime("%Y-%m-%d")
         if dateb:
@@ -168,16 +164,15 @@ class EdgarData:
 
         forms = set(form_types)
         if '10-K' in forms:
-            yield from self._get_filing_index_annual(cik, datea, dateb, calendar_year, get_10k=True)
+            yield from self._get_filing_index_page(cik, '10-K', datea, dateb)
         if '20-F' in forms:
-            yield from self._get_filing_index_annual(cik, datea, dateb, calendar_year, get_20f=True)
+            yield from self._get_filing_index_page(cik, '20-F', datea, dateb)
         if '10-Q' in forms:
-            yield from self._get_filings_index_10q(cik, datea, dateb, calendar_year)
+            yield from self._get_filing_index_page(cik, '10-Q', datea, dateb)
         if '8-K' in forms:
-            yield from self._get_filings_index_8k(cik, datea, dateb, calendar_year)
+            yield from self._get_filing_index_page(cik, '8-K', datea, dateb)
         if '6-K' in forms:
-            yield from self._get_filings_index_6k(cik, datea, dateb, calendar_year)
-
+            yield from self._get_filing_index_page(cik, '6-K', datea, dateb)
 
     def _get_filings_index_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -218,67 +213,6 @@ class EdgarData:
 
             yield {'form': form, 'index_url': filing_url, 'tree': tree,
                    'period_of_report': period_of_report[0], 'filing_date': filing_date[0]}
-
-    def _get_filing_index_annual(self, cik, datea, dateb, calendar_year=None, get_10k=False, get_20f=False):
-        # NOTE: if calendar_year is passed, we will only return filings within that calendar year
-        if calendar_year:
-            datea = '{}-01-01'.format(calendar_year)
-            dateb = '{}-12-31'.format(calendar_year+1)
-
-        if get_10k:
-            for filing_page in self._get_filing_index_page(cik, '10-K', datea, dateb):
-                period_of_report = filing_page['period_of_report']
-
-                # Only proceed if:
-                # (1) calendar_year was not provided (i.e. don't run a check)
-                # (2) calendar_year check passes (i.e. period of report is within calendar year)
-                if not calendar_year or period_of_report[:4] == str(calendar_year):
-                    # Period of report year == given end of fiscal year
-                    # https://www.investopedia.com/terms/f/fiscalyear.asp
-                    yield filing_page
-
-        if get_20f:
-            for filing_page in self._get_filing_index_page(cik, '20-F', datea, dateb):
-                yield filing_page
-
-    def _get_filings_index_10q(self, cik, datea, dateb, calendar_year=None):
-        # NOTE: if calendar_year is passed, we will only return filings within that calendar year
-        if calendar_year:
-            datea = '{}-01-01'.format(calendar_year)
-            dateb = '{}-03-31'.format(calendar_year+1)
-
-        for filing_page in self._get_filing_index_page(cik, '10-Q', datea, dateb):
-            period_of_report = filing_page['period_of_report']
-
-            # Only proceed if:
-            # (1) calendar_year was not provided (i.e. don't run a check)
-            # (2) calendar_year check passes (i.e. period of report is within calendar year)
-            if not calendar_year or period_of_report[:4] == str(calendar_year):
-                yield filing_page
-
-    def _get_filings_index_8k(self, cik, datea, dateb, calendar_year=None):
-        if calendar_year:
-            datea = '{}-01-01'.format(calendar_year)
-            dateb = '{}-12-31'.format(calendar_year)
-
-        for filing_page in self._get_filing_index_page(cik, '8-K', datea, dateb):
-            yield filing_page
-
-    def _get_filings_index_6k(self, cik, datea, dateb, calendar_year=None):
-        if calendar_year:
-            datea = '{}-01-01'.format(calendar_year)
-            dateb = '{}-12-31'.format(calendar_year)
-
-        for filing_page in self._get_filing_index_page(cik, '6-K', datea, dateb):
-            yield filing_page
-
-    # def __init__(self, url, form, tree, cik):
-    #     self.cik = cik
-    #     self.tree = tree
-    #     self.form = form
-    #     self.url = url
-    #     self.html = ''
-    #     self.xbrl = None
 
     def _retrieve_document(self, url):
         try:
