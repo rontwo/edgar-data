@@ -104,6 +104,13 @@ class TestSEC:
             assert doc.html is not None
             assert doc.xbrl is None
 
+    def test_get_form_data_6k(self, sec):
+        docs = sec.get_form_data(cik='0000908732', calendar_year=2016, form_types=['6-K'])
+
+        assert docs
+        for doc in docs:
+            assert doc.form_type == '6-K'
+
     def test_get_form_data(self, sec, company):
         try:
             cik = sec.get_cik(names=company['company'])
@@ -117,18 +124,7 @@ class TestSEC:
         assert docs
         for doc in docs:
             if doc.period_end_date.year == 2017:
-                if doc.xbrl and doc.form_type == '10-Q':
-                    print('==========')
-                    print(company['company'], doc.ticker, doc.filing_date)
-                    print(doc.index_url)
-                    print(doc.text_url)
-                    print('DocumentFiscalPeriodFocus:', doc.fields['DocumentFiscalPeriodFocus'])
-                    print('DocumentFiscalYearFocus:', doc.fields['DocumentFiscalYearFocus'])
-                    print('BalanceSheetDate:', doc.fields['BalanceSheetDate'])
-                    print('ContextForDurations:', doc.fields['ContextForDurations'])
-                    print('IncomeStatementPeriodYTD:', doc.fields['IncomeStatementPeriodYTD'])
-                    print('Revenues:', doc.fields['Revenues'])
-                if False and doc.xbrl and doc.form_type in ('10-K', '20-F'):
+                if doc.xbrl and doc.form_type in ('10-K', '20-F'):
                     assert round(doc.fields['Revenues'].value / 1e9) == company['2017_revenue']
                     assert doc.fields['Revenues'].currency.code == company['currency']
                     print('==========')

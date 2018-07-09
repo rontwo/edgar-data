@@ -142,7 +142,7 @@ class EdgarData:
         cik = '0'*(10-len(cik))+cik
 
         if form_types is None:
-            form_types = ['10-K', '10-Q', '8-K', '20-F']  # TODO: add 6-K
+            form_types = ['10-K', '10-Q', '8-K', '20-F', '6-K']
 
         if calendar_year:
             date_start = None
@@ -175,6 +175,9 @@ class EdgarData:
             yield from self._get_filings_index_10q(cik, datea, dateb, calendar_year)
         if '8-K' in forms:
             yield from self._get_filings_index_8k(cik, datea, dateb, calendar_year)
+        if '6-K' in forms:
+            yield from self._get_filings_index_6k(cik, datea, dateb, calendar_year)
+
 
     def _get_filings_index_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -259,6 +262,14 @@ class EdgarData:
             dateb = '{}-12-31'.format(calendar_year)
 
         for filing_page in self._get_filing_index_page(cik, '8-K', datea, dateb):
+            yield filing_page
+
+    def _get_filings_index_6k(self, cik, datea, dateb, calendar_year=None):
+        if calendar_year:
+            datea = '{}-01-01'.format(calendar_year)
+            dateb = '{}-12-31'.format(calendar_year)
+
+        for filing_page in self._get_filing_index_page(cik, '6-K', datea, dateb):
             yield filing_page
 
     # def __init__(self, url, form, tree, cik):
