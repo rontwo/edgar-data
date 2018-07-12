@@ -113,6 +113,10 @@ class TestSEC:
         for doc in docs:
             assert doc.form_type == '6-K'
 
+    def test_supplemental_links(self, sec):
+        url = 'https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/tsla-10k_20171231.htm'
+        assert len(sec.get_supplemental_links_from_html_url(url)) == 13
+
     def test_get_form_data(self, sec, company):
         try:
             cik = sec.get_cik(names=company['company'])

@@ -250,6 +250,38 @@ class EdgarData:
 
         return text_url, filing, xbrl
 
+    def get_supplemental_links_from_html_url(self, url):
+        """Retrieves all supplemental links. The url passed can be any document url. The convention followed
+        to retrieve the index url is detailed on: https://www.sec.gov/edgar/searchedgar/accessing-edgar-data.htm
+
+        For example, given the url https://www.sec.gov/Archives/edgar/data/64670/000006467015000005/mdt-2015q3x10q.htm
+        Take the 000006467015000005. The first 10 chars represent the CIK, the next two represent the year,
+        and the remaining represent an increasing unique id that sometimes resets per year.
+        Separate each of those sections with a dash and add -index.html, and substitute in the url:
+        https://www.sec.gov/Archives/edgar/data/64670/000006467015000005/0000064670-15-000005-index.html
+
+        :param url: Document url.
+        :return: List of tuples (link, type, size)
+        """
+        url_parts = list(urlparse(url))
+        path = url_parts[2].split('/')
+        accession_number = path[-2]
+
+        cik = accession_number[:10]
+        year = accession_number[10:12]
+        filing_id = accession_number[12:]
+        if not cik or not year or not filing_id:
+            raise ValueError("Unable to build index url from {}".format(url))
+
+        path[-1] = '{0}-{1}-{2}-index.html'.format(cik, year, filing_id)
+        url_parts[2] = '/'.join(path)
+        url = urlunparse(url_parts)
+
+        r = requests.get(url)
+        tree = html.fromstring(r.content)
+
+        return self._supplemental_links(tree)
+
     def _insert_sec_url(self, relative_url):
         url_parts = list(urlparse(relative_url))
         url_parts[0] = 'https'
