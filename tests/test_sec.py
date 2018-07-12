@@ -121,7 +121,7 @@ class TestSEC:
 
         assert cik == company['cik']
 
-        docs = sec.get_form_data(cik=cik, date_start=datetime(2016, 1, 1), date_end=datetime(2017, 12, 31))
+        docs = sec.get_form_data(cik=cik, date_start=datetime(2017, 1, 1), date_end=datetime(2018, 12, 31))
 
         assert docs
         for doc in docs:

@@ -151,8 +151,10 @@ class EdgarData:
                 index_url=filing['index_url'], form=filing['form'], tree=filing['tree'],
                 fetch_html=fetch_html, fetch_xbrl=fetch_xbrl)
 
+            supplemental_links = self._supplemental_links(filing['tree'])
+
             all_filings.append(
-                EdgarForm(filing_html, xbrl, cik, text_url, filing))
+                EdgarForm(filing_html, xbrl, cik, text_url, filing, supplemental_links))
 
         return all_filings
 
@@ -234,7 +236,8 @@ class EdgarData:
 
         if fetch_xbrl and form in ('10-K', '10-Q', '20-F'):
             try:
-                xbrl_doc = self._retrieve_document(self._xbrl_url(tree, index_url))
+                xbrl_url = self._xbrl_url(tree, index_url)
+                xbrl_doc = self._retrieve_document(xbrl_url)
 
                 # If using the python-xbrl library (this actually doesn't work, as every info is filled as 0.0):
                 #xbrl_parser = XBRLParser(precision=0)
@@ -246,6 +249,27 @@ class EdgarData:
                 xbrl = None
 
         return text_url, filing, xbrl
+
+    def _insert_sec_url(self, relative_url):
+        url_parts = list(urlparse(relative_url))
+        url_parts[0] = 'https'
+        url_parts[1] = 'www.sec.gov'
+        url = urlunparse(url_parts)
+
+        return url
+
+    def _supplemental_links(self, tree):
+        documents = tree.xpath('//*[@id="formDiv"]//table[@summary="Document Format Files"]//tr')
+        try:
+            # Select the last three columns from the Document Format Files table
+            # urls are relative (i.e. /Archives/edgar/data/... )
+            # so we insert https://www.sec.gov safely in the links
+            links = [(self._insert_sec_url(x.find('a').attrib['href']), y.text, z.text)
+                     for (x, y, z) in (k.getchildren()[-3:] for k in documents[1:])]
+        except:
+            links = []
+
+        return links
 
     def _document_url(self, table_summary, file_description, tree, index_url):
         # link is relative (i.e. /Archives/edgar/data/... )
@@ -300,7 +324,7 @@ class UnknownFilingType(Exception):
 
 class EdgarForm:
 
-    def __init__(self, html, xbrl, cik, text_url, filing):
+    def __init__(self, html, xbrl, cik, text_url, filing, supplemental_links):
         """Filing class. Access XBRL data through the `xbrl` attribute.
         See pysec XBRL class for more details on how to get DEI or GAAP data.
 
@@ -317,6 +341,7 @@ class EdgarForm:
         else:
             self.fields = None
             self.ticker = None
+        self.supplemental_links = supplemental_links
 
         self.cik = cik
         self.form_type = filing['form']
