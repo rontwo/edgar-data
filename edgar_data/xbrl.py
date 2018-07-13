@@ -6,6 +6,7 @@
 # The GAAP and IFRS data are changed to be None if missing, instead of 0
 
 import re
+from datetime import datetime
 
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -80,13 +81,13 @@ class XBRL:
         self.GetBaseInformation()
         self.loadYear(0)
 
-    def loadYear(self, yearminus=0):
+    def loadYear(self, yearminus=0, quarter=False):
         currentEnd = self.getNode("//dei:DocumentPeriodEndDate").text
         asdate = re.match('\s*(\d{4})-(\d{2})-(\d{2})\s*', currentEnd)
         if asdate:
             year = int(asdate.groups()[0]) - yearminus
             thisend = '%s-%s-%s' % (year, asdate.groups()[1], asdate.groups()[2])
-            self.GetCurrentPeriodAndContextInformation(thisend)
+            self.GetCurrentPeriodAndContextInformation(thisend, quarter)
             FundamentantalAccountingConcepts(self)
             return True
         else:
@@ -204,7 +205,7 @@ class XBRL:
         else:
             self.fields['DocumentType'] = None
 
-    def GetCurrentPeriodAndContextInformation(self, EndDate):
+    def GetCurrentPeriodAndContextInformation(self, EndDate, quarter=False):
         # Figures out the current period and contexts for the current period instance/duration contexts
 
         self.fields['BalanceSheetDate'] = "ERROR"
@@ -321,23 +322,36 @@ class XBRL:
                         #print("Context start date: " + StartDate)
                         #print("YTD start date: " + StartDateYTD)
 
-                        if StartDate <= StartDateYTD:
-                            # MsgBox "YTD is greater"
-                            # Start date is for quarter
-                            #print("Context start date is less than current year to date, replace")
-                            #print("Context start date: " + StartDate)
-                            #print("Current min: " + StartDateYTD)
+                        if not quarter:
+                            if StartDate <= StartDateYTD:
+                                # MsgBox "YTD is greater"
+                                # Start date is for quarter
+                                #print("Context start date is less than current year to date, replace")
+                                #print("Context start date: " + StartDate)
+                                #print("Current min: " + StartDateYTD)
 
-                            StartDateYTD = StartDate
-                            UseContext = j.get('id')
-                            # MsgBox j.selectSingleNode("@id").text
+                                StartDateYTD = StartDate
+                                UseContext = j.get('id')
+                                # MsgBox j.selectSingleNode("@id").text
+                            else:
+                                # MsgBox "Context is greater"
+                                # Start date is for year
+                                #print("Context start date is greater than YTD, keep current YTD")
+                                #print("Context start date: " + StartDate)
+
+                                StartDateYTD = StartDateYTD
                         else:
-                            # MsgBox "Context is greater"
-                            # Start date is for year
-                            #print("Context start date is greater than YTD, keep current YTD")
-                            #print("Context start date: " + StartDate)
+                            date_format = "%Y-%m-%d"
+                            end = datetime.strptime(EndDate, date_format)
+                            start = datetime.strptime(StartDate, date_format)
+                            old_start = datetime.strptime(StartDateYTD, date_format)
 
-                            StartDateYTD = StartDateYTD
+                            delta = abs(end - start).days
+                            old_delta = abs(end - old_start).days
+
+                            if abs(delta - 90) < abs(old_delta - 90):
+                                StartDateYTD = StartDate
+                                UseContext = j.get('id')
 
                         #print("Use context ID: " + UseContext)
                         #print("Current min: " + StartDateYTD)

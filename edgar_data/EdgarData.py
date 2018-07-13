@@ -384,5 +384,14 @@ class EdgarForm:
         self.index_url = filing['index_url']
         self.text_url = text_url
 
+    def set_period(self, this_year=False, this_quarter=False):
+        if not (this_year != this_quarter):
+            raise ValueError("Set either this_year or this_quarter.")
+
+        if this_year:
+            self.xbrl.loadYear(0, quarter=False)
+        elif this_quarter:
+            self.xbrl.loadYear(0, quarter=True)
+
     def __repr__(self):
         return "{0} - {1} ({2})".format(self.cik, self.form_type, self.period_end_date)

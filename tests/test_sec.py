@@ -117,6 +117,26 @@ class TestSEC:
         url = 'https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/tsla-10k_20171231.htm'
         assert len(sec.get_supplemental_links_from_html_url(url)) == 13
 
+    def test_qtd_vs_ytd(self, sec, full_2017_date):
+        docs = sec.get_form_data(cik='0000789019', date_start=full_2017_date[0], date_end=full_2017_date[1],
+                                 form_types=['10-K', '10-Q'])
+
+        assert docs
+        for doc in docs:
+            #print()
+            #print('Fiscal Period:', doc.fields['DocumentFiscalPeriodFocus'])
+            #print('End Date:', doc.period_end_date)
+            #print('Start date (YTD):', doc.fields['IncomeStatementPeriodYTD'])
+            #print('YTD:', doc.fields['Revenues'])
+            rev_ytd = doc.fields['Revenues']
+            doc.set_period(this_quarter=True)
+            rev_qtd = doc.fields['Revenues']
+            #print('Start date (QTD):', doc.fields['IncomeStatementPeriodYTD'])
+            #print('QTD:', doc.fields['Revenues'])
+            #print()
+
+            assert rev_qtd.value <= rev_ytd.value
+
     def test_get_form_data(self, sec, company):
         try:
             cik = sec.get_cik(names=company['company'])
@@ -146,3 +166,4 @@ class TestSEC:
                     print('ProfitLoss (Net Income):', doc.fields['NetIncomeLoss'], doc.fields.currency('NetIncomeLoss'))
                     print('Net Income attributable:', doc.fields['NetIncomeAttributableToParent'], doc.fields.currency('NetIncomeAttributableToParent'))
                     print('==========')
+
