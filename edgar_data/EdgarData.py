@@ -292,12 +292,26 @@ class EdgarData:
 
     def _supplemental_links(self, tree):
         documents = tree.xpath('//*[@id="formDiv"]//table[@summary="Document Format Files"]//tr')
+
         try:
-            # Select the last three columns from the Document Format Files table
-            # urls are relative (i.e. /Archives/edgar/data/... )
-            # so we insert https://www.sec.gov safely in the links
-            links = [(self._insert_sec_url(x.find('a').attrib['href']), y.text, z.text)
-                     for (x, y, z) in (k.getchildren()[-3:] for k in documents[1:])]
+            docs = []
+            types = []
+            sizes = []
+
+            for idx, col in enumerate(documents[0].getchildren()):
+                col_text = col.text
+
+                if col_text == 'Document':
+                    docs = [self._insert_sec_url(doc.find('a').attrib['href'])
+                            for doc in (line.getchildren()[idx] for line in documents[1:])]
+                elif col_text == 'Type':
+                    types = [typ.text
+                             for typ in (line.getchildren()[idx] for line in documents[1:])]
+                elif col_text == 'Size':
+                    sizes = [siz.text
+                             for siz in (line.getchildren()[idx] for line in documents[1:])]
+
+            links = list(zip(docs, types, sizes))
         except:
             links = []
 

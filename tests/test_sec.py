@@ -115,7 +115,8 @@ class TestSEC:
 
     def test_supplemental_links(self, sec):
         url = 'https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/tsla-10k_20171231.htm'
-        assert len(sec.get_supplemental_links_from_html_url(url)) == 13
+        links = sec.get_supplemental_links_from_html_url(url)
+        assert len(links) == 13
 
     def test_qtd_vs_ytd(self, sec, full_2017_date):
         docs = sec.get_form_data(cik='0000789019', date_start=full_2017_date[0], date_end=full_2017_date[1],
