@@ -732,9 +732,23 @@ class FundamentantalAccountingConcepts:
                 and (self.xbrl.fields['NetCashFlowsOperating'] is not None
                      or self.xbrl.fields['NetCashFlowsInvesting'] is not None
                      or self.xbrl.fields['NetCashFlowsFinancing'] is not None):
-            self.xbrl.fields['NetCashFlow'] = self.xbrl.fields['NetCashFlowsOperating'] + \
-                                              self.xbrl.fields['NetCashFlowsInvesting'] + \
-                                              self.xbrl.fields['NetCashFlowsFinancing']
+            operating_val = 0
+            investing_val = 0
+            financing_val = 0
+            unit_ref = None
+
+            if self.xbrl.fields['NetCashFlowsOperating']:
+                unit_ref = self.xbrl.fields['NetCashFlowsOperating'].unit_ref
+                operating_val = self.xbrl.fields['NetCashFlowsOperating'].value
+            if self.xbrl.fields['NetCashFlowsInvesting']:
+                unit_ref = self.xbrl.fields['NetCashFlowsInvesting'].unit_ref
+                investing_val = self.xbrl.fields['NetCashFlowsInvesting'].value
+            if self.xbrl.fields['NetCashFlowsFinancing']:
+                unit_ref = self.xbrl.fields['NetCashFlowsFinancing'].unit_ref
+                financing_val = self.xbrl.fields['NetCashFlowsFinancing'].value
+
+            from edgar_data.xbrl import Field
+            self.xbrl.fields['NetCashFlow'] = Field(operating_val + investing_val + financing_val, unit_ref)
 
         # Key ratios
         try:
@@ -875,3 +889,4 @@ class FundamentantalAccountingConcepts:
 
         self.xbrl.fields['SalesAndMarketingExpense'] = self.xbrl.GetFactValue('ifrs-full:SalesAndMarketingExpense',
                                                                               'Duration')
+
