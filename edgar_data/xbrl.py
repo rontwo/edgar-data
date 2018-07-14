@@ -292,8 +292,14 @@ class XBRL:
         ###This finds the duration context
         ###This may work incorrectly for fiscal year ends because the dates cross calendar years
         # Get context ID of durations and the start date for the database table
-        oNodelist2 = self.getNodeList(
-            "//us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease | //us-gaap:CashPeriodIncreaseDecrease | //us-gaap:NetIncomeLoss | //dei:DocumentPeriodEndDate")
+
+        oNodelist2 = self.getNodeList("//us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease")
+        if not oNodelist2:
+            oNodelist2 = self.getNodeList("//us-gaap:CashPeriodIncreaseDecrease")
+            if not oNodelist2:
+                oNodelist2 = self.getNodeList("//us-gaap:NetIncomeLoss")
+                if not oNodelist2:
+                    oNodelist2 = self.getNodeList("//dei:DocumentPeriodEndDate")
 
         StartDate = "ERROR"
         StartDateYTD = "2099-01-01"
