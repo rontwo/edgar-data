@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 
 from lxml import etree
-from lxml.etree import XPathEvalError
+from lxml.etree import XPathEvalError, XMLParser
 
 from edgar_data.currency import find_currency
 from .xbrl_fundamentals import FundamentantalAccountingConcepts
@@ -70,7 +70,8 @@ class XBRL:
         self.fields = FieldsDataset()
 
         self.EntireInstanceDocument = xbrl_doc
-        self.oInstance = etree.fromstring(self.EntireInstanceDocument)
+        p = XMLParser(huge_tree=True)
+        self.oInstance = etree.fromstring(self.EntireInstanceDocument, parser=p)
         self.ns = {}
         for k in list(self.oInstance.nsmap.keys()):
             if k != None:
