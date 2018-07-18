@@ -376,7 +376,7 @@ class EdgarForm:
     :ivar ticker: Company ticker.
     :ivar supplemental_links: List containing all document files, formatted (link, type, size).
     :ivar cik: 10-digit CIK.
-    :ivar form_type: Document type. Can be one of ['10-K', '10-Q', '8-K', '20-F', '6-K']
+    :ivar form_type: Document type, capitalized and with hyphen. Can be one of ['10-K', '10-Q', '8-K', '20-F', '6-K']
     :ivar period_end_date: Period of report end date.
     :ivar filing_date: Filing date.
     :ivar index_url: URL for the filing index.
