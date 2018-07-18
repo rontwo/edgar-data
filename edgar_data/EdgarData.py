@@ -369,6 +369,19 @@ class UnknownFilingType(Exception):
 
 
 class EdgarForm:
+    """
+    :ivar html: Filing cleaned HTML.
+    :ivar xbrl: Filing XBRL object.
+    :ivar fields: XBRL fields dictionary.
+    :ivar ticker: Company ticker.
+    :ivar supplemental_links: List containing all document files, formatted (link, type, size).
+    :ivar cik: 10-digit CIK.
+    :ivar form_type: Document type. Can be one of ['10-K', '10-Q', '8-K', '20-F', '6-K']
+    :ivar period_end_date: Period of report end date.
+    :ivar filing_date: Filing date.
+    :ivar index_url: URL for the filing index.
+    :ivar text_url: URL for the filing HTML file.
+    """
 
     def __init__(self, html, xbrl, cik, text_url, filing, supplemental_links):
         """Filing class. Access XBRL data through the `xbrl` attribute.
@@ -379,24 +392,25 @@ class EdgarForm:
         >>> filing = EdgarForm(...)
         >>> filing.fields['TradingSymbol']  # returns the ticker
         """
-        self.html = html
-        self.xbrl = xbrl
+        self.html = html  # type: str
+        self.xbrl = xbrl  # type: XBRL
+
+        self.fields = None  # type: dict
+        self.ticker = None  # type: str
         if xbrl:
             self.fields = xbrl.fields
             self.ticker = self.fields['TradingSymbol']
-        else:
-            self.fields = None
-            self.ticker = None
-        self.supplemental_links = supplemental_links
 
-        self.cik = cik
-        self.form_type = filing['form']
+        self.supplemental_links = supplemental_links  # type: tuple(str, str, str)
+
+        self.cik = cik  # type: str
+        self.form_type = filing['form']  # type: str
         self.period_end_date = datetime.strptime(filing['period_of_report'],
-                                                 "%Y-%m-%d")  # type: datetime.datetime
+                                                 "%Y-%m-%d")  # type: datetime
         self.filing_date = datetime.strptime(filing['filing_date'],
-                                             "%Y-%m-%d")  # type: datetime.datetime
-        self.index_url = filing['index_url']
-        self.text_url = text_url
+                                             "%Y-%m-%d")  # type: datetime
+        self.index_url = filing['index_url']  # type: str
+        self.text_url = text_url  # type: str
 
     def set_period(self, this_year=False, this_quarter=False):
         if not (this_year != this_quarter):
