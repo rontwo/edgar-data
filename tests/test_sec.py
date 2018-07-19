@@ -151,7 +151,7 @@ class TestSEC:
         assert docs
         for doc in docs:
             if doc.period_end_date.year == 2017:
-                if doc.xbrl and doc.form_type in ('10-K', '20-F'):
+                if doc.xbrl and doc.form_type in ('10-K', '20-F', '40-F'):
                     print('==========')
                     print(company['company'], doc.ticker, doc.filing_date)
                     print(doc.index_url)
@@ -164,8 +164,9 @@ class TestSEC:
                     print('IncomeFromContinuingOperationsBeforeTax (EBIT?):', doc.fields['IncomeFromContinuingOperationsBeforeTax'], doc.fields.currency('IncomeFromContinuingOperationsBeforeTax'))
                     print('ProfitLoss (Net Income):', doc.fields['NetIncomeLoss'], doc.fields.currency('NetIncomeLoss'))
                     print('Net Income attributable:', doc.fields['NetIncomeAttributableToParent'], doc.fields.currency('NetIncomeAttributableToParent'))
+                    print(doc.fields['ContextForDurations'])
                     print('==========')
 
-                    assert round(doc.fields['Revenues'].value / 1e9) == company['2017_revenue']
+                    assert round(doc.fields['Revenues'].value / company['revenue_order']) == company['2017_revenue']
                     assert doc.fields['Revenues'].currency.code == company['currency']
 

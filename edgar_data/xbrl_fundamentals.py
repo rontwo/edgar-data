@@ -794,6 +794,8 @@ class FundamentantalAccountingConcepts:
         # These are the ones also found on GAAP:
         if self.xbrl.fields['Revenues'] is None:
             self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:Revenue', 'Duration')
+            if self.xbrl.fields['Revenues'] is None:
+                self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:RevenueFromSaleOfOilAndGasProducts', 'Duration')
 
         if self.xbrl.fields['NetIncomeAttributableToParent'] is None:
             self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue(

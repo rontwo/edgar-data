@@ -105,7 +105,7 @@ class EdgarData:
             # could not find a valid name
             raise CIKNotFound('Names list exhausted or bad ticker.')
 
-        return '0'*(10-len(cik))+cik
+        return cik.rjust(10, '0')
 
     def get_form_data(self, cik, date_start=None, date_end=None,
                       fetch_html=True, fetch_xbrl=True, form_types=None):
@@ -140,9 +140,9 @@ class EdgarData:
             raise ValueError("Please provide either a date_start or a date_end argument to get_form_data.")
 
         if form_types is None:
-            form_types = ['10-K', '10-Q', '8-K', '20-F', '6-K']
+            form_types = ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K']
 
-        cik = '0'*(10-len(cik))+cik
+        cik = cik.rjust(10, '0')
 
         all_filings = []
 
@@ -164,17 +164,8 @@ class EdgarData:
         if dateb:
             dateb = dateb.strftime("%Y-%m-%d")
 
-        forms = set(form_types)
-        if '10-K' in forms:
-            yield from self._get_filing_index_page(cik, '10-K', datea, dateb)
-        if '20-F' in forms:
-            yield from self._get_filing_index_page(cik, '20-F', datea, dateb)
-        if '10-Q' in forms:
-            yield from self._get_filing_index_page(cik, '10-Q', datea, dateb)
-        if '8-K' in forms:
-            yield from self._get_filing_index_page(cik, '8-K', datea, dateb)
-        if '6-K' in forms:
-            yield from self._get_filing_index_page(cik, '6-K', datea, dateb)
+        for form in form_types:
+            yield from self._get_filing_index_page(cik, form, datea, dateb)
 
     def _get_filings_index_urls(self, cik, filing_type, datea, dateb):
         resp = self._request_edgar(CIK=cik, type=filing_type, datea=datea, dateb=dateb)
@@ -234,7 +225,7 @@ class EdgarData:
             full_filing_doc = self._retrieve_document(text_url)
             filing = self._clean_html(full_filing_doc)
 
-        if fetch_xbrl and form in ('10-K', '10-Q', '20-F'):
+        if fetch_xbrl and form in ('10-K', '10-Q', '20-F', '40-F'):
             try:
                 xbrl_url = self._xbrl_url(tree, index_url)
                 xbrl_doc = self._retrieve_document(xbrl_url)
@@ -376,7 +367,7 @@ class EdgarForm:
     :ivar ticker: Company ticker.
     :ivar supplemental_links: List containing all document files, formatted (link, type, size).
     :ivar cik: 10-digit CIK.
-    :ivar form_type: Document type, capitalized and with hyphen. Can be one of ['10-K', '10-Q', '8-K', '20-F', '6-K']
+    :ivar form_type: Document type, capitalized and with hyphen. Can be one of ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K']
     :ivar period_end_date: Period of report end date.
     :ivar filing_date: Filing date.
     :ivar index_url: URL for the filing index.
