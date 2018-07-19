@@ -140,7 +140,7 @@ class EdgarData:
             raise ValueError("Please provide either a date_start or a date_end argument to get_form_data.")
 
         if form_types is None:
-            form_types = ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K']
+            form_types = ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K', 'S-1']
 
         cik = cik.rjust(10, '0')
 
@@ -199,13 +199,18 @@ class EdgarData:
             tree = html.fromstring(r.content)
 
             period_of_report = tree.xpath("//*[contains(text(),'Period of Report')]/following-sibling::div/text()")
-            filing_date = tree.xpath("//*[contains(text(),'Filing Date')]/following-sibling::div[1]/text()")
+            if period_of_report:
+                period_of_report = period_of_report[0]
 
-            if not period_of_report or not filing_date:
+            filing_date = tree.xpath("//*[contains(text(),'Filing Date')]/following-sibling::div[1]/text()")
+            if filing_date:
+                filing_date = filing_date[0]
+
+            if (not period_of_report and form != 'S-1') or not filing_date:
                 raise ReportError('Something wrong happened when fetching {0} {1} filing.'.format(cik, form))
 
             yield {'form': form, 'index_url': filing_url, 'tree': tree,
-                   'period_of_report': period_of_report[0], 'filing_date': filing_date[0]}
+                   'period_of_report': period_of_report, 'filing_date': filing_date}
 
     def _retrieve_document(self, url):
         try:
@@ -367,7 +372,7 @@ class EdgarForm:
     :ivar ticker: Company ticker.
     :ivar supplemental_links: List containing all document files, formatted (link, type, size).
     :ivar cik: 10-digit CIK.
-    :ivar form_type: Document type, capitalized and with hyphen. Can be one of ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K']
+    :ivar form_type: Document type, capitalized and with hyphen. Can be one of ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K', 'S-1']
     :ivar period_end_date: Period of report end date.
     :ivar filing_date: Filing date.
     :ivar index_url: URL for the filing index.
@@ -396,8 +401,11 @@ class EdgarForm:
 
         self.cik = cik  # type: str
         self.form_type = filing['form']  # type: str
-        self.period_end_date = datetime.strptime(filing['period_of_report'],
-                                                 "%Y-%m-%d")  # type: datetime
+
+        self.period_end_date = None  # type: datetime
+        if filing['period_of_report']:
+            self.period_end_date = datetime.strptime(filing['period_of_report'],
+                                                     "%Y-%m-%d")
         self.filing_date = datetime.strptime(filing['filing_date'],
                                              "%Y-%m-%d")  # type: datetime
         self.index_url = filing['index_url']  # type: str

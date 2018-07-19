@@ -113,6 +113,15 @@ class TestSEC:
         for doc in docs:
             assert doc.form_type == '6-K'
 
+    def test_get_form_data_s1(self, sec, full_2017_date):
+        docs = sec.get_form_data(cik='0001564408', date_start=full_2017_date[0], date_end=full_2017_date[1],
+                                 form_types=['S-1'])
+
+        assert docs
+        for doc in docs:
+            print(doc)
+            assert doc.form_type == 'S-1'
+
     def test_supplemental_links(self, sec):
         url = 'https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/tsla-10k_20171231.htm'
         links = sec.get_supplemental_links_from_html_url(url)
