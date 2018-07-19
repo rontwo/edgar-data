@@ -26,7 +26,7 @@ def sec():
         'company': ['Hudson Ltd'],
         '2017_revenue': 2,
         'revenue_order': 1e9,
-        'ticker': 'IBM',
+        'ticker': 'HUD',
         'cik': '0001714368',
         'currency': 'USD'
     },
