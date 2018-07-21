@@ -197,7 +197,7 @@ class XBRL:
             self.fields['DocumentFiscalYearFocus'] = None
 
         # DocumentFiscalPeriodFocus
-        oNode = self.getNode("//dei:[@contextRef]")
+        oNode = self.getNode("//dei:DocumentFiscalPeriodFocus[@contextRef]")	
         if oNode is not None:
             self.fields['DocumentFiscalPeriodFocus'] = oNode.text
         else:
