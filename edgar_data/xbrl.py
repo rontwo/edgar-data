@@ -330,34 +330,33 @@ class XBRL:
             else:
                 raise ValueError("Unknown fiscal period focus.")
 
-        if True:  # quarter:
-            all_contexts = self.getNodeList("//xbrli:context")
+        all_contexts = self.getNodeList("//xbrli:context")
 
-            for context in all_contexts:
-                context_end_date = self.getNode("xbrli:period/xbrli:endDate", context)
-                # Nodes with the right period
-                if context_end_date is not None and context_end_date.text == EndDate:
+        for context in all_contexts:
+            context_end_date = self.getNode("xbrli:period/xbrli:endDate", context)
+            # Nodes with the right period
+            if context_end_date is not None and context_end_date.text == EndDate:
 
-                    has_dimensions = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember", context)
-                    if not len(has_dimensions):
-                        StartDate = self.getNode("xbrli:period/xbrli:startDate", context).text
-                        start = datetime.strptime(StartDate, date_format)
-                        old_start = datetime.strptime(StartDateYTD, date_format)
+                has_dimensions = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember", context)
+                if not len(has_dimensions):
+                    StartDate = self.getNode("xbrli:period/xbrli:startDate", context).text
+                    start = datetime.strptime(StartDate, date_format)
+                    old_start = datetime.strptime(StartDateYTD, date_format)
 
-                        delta = abs(end - start).days
-                        old_delta = abs(end - old_start).days
+                    delta = abs(end - start).days
+                    old_delta = abs(end - old_start).days
 
-                        if abs(delta - ndays) < abs(old_delta - ndays):
-                            StartDateYTD = StartDate
-                            UseContext = context.get('id')
+                    if abs(delta - ndays) < abs(old_delta - ndays):
+                        StartDateYTD = StartDate
+                        UseContext = context.get('id')
 
-            start = datetime.strptime(StartDateYTD, date_format)
-            end = datetime.strptime(EndDate, date_format)
-            delta = abs(end - start).days
+        start = datetime.strptime(StartDateYTD, date_format)
+        end = datetime.strptime(EndDate, date_format)
+        delta = abs(end - start).days
 
-            if abs(delta) < (ndays-days_tol_lower) or abs(delta) > (ndays+days_tol_upper):
-                raise EDGARPeriodError("Could not find a valid period. "
-                                       "Found delta={0} but needed {1}".format(delta, ndays))
+        if abs(delta) < (ndays-days_tol_lower) or abs(delta) > (ndays+days_tol_upper):
+            raise EDGARPeriodError("Could not find a valid period. "
+                                   "Found delta={0} but needed {1}".format(delta, ndays))
 
         if StartDate == "ERROR" or StartDateYTD == "2099-01-01" or UseContext == "ERROR":
             raise EDGARPeriodError("Could not find a valid context.")
@@ -377,6 +376,19 @@ class XBRL:
 
         ContextForDurations = UseContext
         self.fields['ContextForDurations'] = ContextForDurations
+
+        self.fields['ContextForBusinessSegments'] = []
+
+        all_contexts = self.getNodeList("//xbrli:context")
+
+        for context in all_contexts:
+            context_end_date = self.getNode("xbrli:period/xbrli:endDate", context)
+            # Nodes with the right period
+            if context_end_date is not None and context_end_date.text == EndDate:
+
+                business_segments = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember[@dimension='us-gaap:StatementBusinessSegmentsAxis']", context)
+                if business_segments:
+                    self.fields['ContextForBusinessSegments'].append(context)
 
     def LookForAlternativeInstanceContext(self):
         # This deals with the situation where no instance context has no dimensions
