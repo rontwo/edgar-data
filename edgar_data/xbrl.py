@@ -197,7 +197,7 @@ class XBRL:
             self.fields['DocumentFiscalYearFocus'] = None
 
         # DocumentFiscalPeriodFocus
-        oNode = self.getNode("//dei:[@contextRef]")
+        oNode = self.getNode("//dei:DocumentFiscalPeriodFocus[@contextRef]")
         if oNode is not None:
             self.fields['DocumentFiscalPeriodFocus'] = oNode.text
         else:
@@ -301,8 +301,36 @@ class XBRL:
         StartDateYTD = "2099-01-01"
         UseContext = "ERROR"
         date_format = "%Y-%m-%d"
+        end = datetime.strptime(EndDate, date_format)
 
+        # Based on https://xbrl.us/data-rule/dqc_0006pr/
         if quarter:
+            ndays = 90
+            days_tol_upper = 119 - ndays
+            days_tol_lower = ndays - 77
+        else:
+            period = self.fields['DocumentFiscalPeriodFocus']
+
+            if period == 'FY':
+                ndays = 364
+                days_tol_upper = 379 - ndays
+                days_tol_lower = ndays - 350
+            elif period == 'Q1':
+                ndays = 90*1
+                days_tol_upper = 119 - ndays
+                days_tol_lower = ndays - 77
+            elif period == 'Q2':
+                ndays = 90*2
+                days_tol_upper = 204 - ndays
+                days_tol_lower = ndays - 154
+            elif period == 'Q3':
+                ndays = 90*3
+                days_tol_upper = 287 - ndays
+                days_tol_lower = ndays - 238
+            else:
+                raise ValueError("Unknown fiscal period focus.")
+
+        if True:  # quarter:
             all_contexts = self.getNodeList("//xbrli:context")
 
             for context in all_contexts:
@@ -313,16 +341,14 @@ class XBRL:
                     has_dimensions = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember", context)
                     if not len(has_dimensions):
                         StartDate = self.getNode("xbrli:period/xbrli:startDate", context).text
-                        end = datetime.strptime(EndDate, date_format)
                         start = datetime.strptime(StartDate, date_format)
                         old_start = datetime.strptime(StartDateYTD, date_format)
 
-                        print(start, old_start, end)
-
                         delta = abs(end - start).days
                         old_delta = abs(end - old_start).days
+                        print(context.get('id'), StartDate, delta, abs(delta - ndays), old_start, old_delta, abs(old_delta - ndays), context_end_date.text)
 
-                        if abs(delta - 90) < abs(old_delta - 90):
+                        if abs(delta - ndays) < abs(old_delta - ndays):
                             StartDateYTD = StartDate
                             UseContext = context.get('id')
 
@@ -330,65 +356,9 @@ class XBRL:
             end = datetime.strptime(EndDate, date_format)
             delta = abs(end - start).days
 
-            if abs(delta) < 80 or abs(delta) > 100:
-                raise EDGARPeriodError("Could not find a valid period QTD period.")
-
-        else:
-            oNodelist2 = self.getNodeList("//us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease")
-            if not oNodelist2:
-                oNodelist2 = self.getNodeList("//us-gaap:CashPeriodIncreaseDecrease")
-                if not oNodelist2:
-                    oNodelist2 = self.getNodeList("//us-gaap:NetIncomeLoss")
-                    if not oNodelist2:
-                        oNodelist2 = self.getNodeList("//dei:DocumentPeriodEndDate")
-
-            for i in oNodelist2:
-                # #print i.XML
-
-                ContextID = i.get('contextRef')
-                ContextPeriod = self.getNode("//xbrli:context[@id='" + ContextID + "']/xbrli:period/xbrli:endDate")
-                # Usecontext = ContextID
-                # #print ContextPeriod
-
-                # Nodelist of all the contexts of the fact us-gaap:Assets
-                oNodelist3 = self.getNodeList("//xbrli:context[@id='" + ContextID + "']")
-                for j in oNodelist3:
-
-                    # Nodes with the right period
-                    if self.getNode("xbrli:period/xbrli:endDate", j).text == EndDate:
-
-                        oNode4 = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember", j)
-
-                        if not len(oNode4):  # Making sure there are no dimensions. Is this the right way to do it?
-
-                            # Get the year-to-date context, not the current period
-                            StartDate = self.getNode("xbrli:period/xbrli:startDate", j).text
-                            #print("Context start date: " + StartDate)
-                            #print("YTD start date: " + StartDateYTD)
-
-                            if StartDate <= StartDateYTD:
-                                # MsgBox "YTD is greater"
-                                # Start date is for quarter
-                                #print("Context start date is less than current year to date, replace")
-                                #print("Context start date: " + StartDate)
-                                #print("Current min: " + StartDateYTD)
-
-                                StartDateYTD = StartDate
-                                UseContext = j.get('id')
-                                # MsgBox j.selectSingleNode("@id").text
-                            else:
-                                # MsgBox "Context is greater"
-                                # Start date is for year
-                                #print("Context start date is greater than YTD, keep current YTD")
-                                #print("Context start date: " + StartDate)
-
-                                StartDateYTD = StartDateYTD
-
-                            #print("Use context ID: " + UseContext)
-                            #print("Current min: " + StartDateYTD)
-                            #print(" ")
-
-                            #print("Use context: " + UseContext)
+            if abs(delta) < (ndays-days_tol_lower) or abs(delta) > (ndays+days_tol_upper):
+                raise EDGARPeriodError("Could not find a valid period. "
+                                       "Found delta={0} but needed {1}".format(delta, ndays))
 
         if StartDate == "ERROR" or StartDateYTD == "2099-01-01" or UseContext == "ERROR":
             raise EDGARPeriodError("Could not find a valid context.")

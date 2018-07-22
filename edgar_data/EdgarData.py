@@ -239,7 +239,6 @@ class EdgarData:
                 #xbrl_parser = XBRLParser(precision=0)
                 #xbrl = xbrl_parser.parse(io.StringIO(xbrl_doc))
                 #gaap = xbrl_parser.parseGAAP(xbrl, ...)
-
                 xbrl = XBRL(xbrl_doc.encode())
             except FilingNotFound:
                 xbrl = None

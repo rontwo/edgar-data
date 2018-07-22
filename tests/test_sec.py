@@ -119,7 +119,6 @@ class TestSEC:
 
         assert docs
         for doc in docs:
-            print(doc)
             assert doc.form_type == 'S-1'
 
     def test_supplemental_links(self, sec):
@@ -134,16 +133,16 @@ class TestSEC:
         assert docs
         for doc in docs:
             #print()
-            #print('Fiscal Period:', doc.fields['DocumentFiscalPeriodFocus'])
-            #print('End Date:', doc.period_end_date)
-            #print('Start date (YTD):', doc.fields['IncomeStatementPeriodYTD'])
-            #print('YTD:', doc.fields['Revenues'])
+            # print('Fiscal Period:', doc.fiscal_period_focus)
+            # print('End Date:', doc.period_end_date)
+            # print('Start date (YTD):', doc.fields['IncomeStatementPeriodYTD'])
+            # print('YTD:', doc.fields['Revenues'])
             rev_ytd = doc.fields['Revenues']
             doc.set_period(this_quarter=True)
             rev_qtd = doc.fields['Revenues']
-            #print('Start date (QTD):', doc.fields['IncomeStatementPeriodYTD'])
-            #print('QTD:', doc.fields['Revenues'])
-            #print()
+            # print('Start date (QTD):', doc.fields['IncomeStatementPeriodYTD'])
+            # print('QTD:', doc.fields['Revenues'])
+            # print()
 
             assert rev_qtd.value <= rev_ytd.value
 
