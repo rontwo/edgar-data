@@ -397,6 +397,7 @@ class EdgarForm:
             self.fields = xbrl.fields
             self.ticker = self.fields['TradingSymbol']
             self.fiscal_period_focus = self.fields['DocumentFiscalPeriodFocus']
+            self.fiscal_year_focus = self.fields['DocumentFiscalYearFocus']
 
         self.supplemental_links = supplemental_links  # type: tuple(str, str, str)
 

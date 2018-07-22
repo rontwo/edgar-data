@@ -346,7 +346,6 @@ class XBRL:
 
                         delta = abs(end - start).days
                         old_delta = abs(end - old_start).days
-                        print(context.get('id'), StartDate, delta, abs(delta - ndays), old_start, old_delta, abs(old_delta - ndays), context_end_date.text)
 
                         if abs(delta - ndays) < abs(old_delta - ndays):
                             StartDateYTD = StartDate
