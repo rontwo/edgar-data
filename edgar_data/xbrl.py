@@ -83,6 +83,31 @@ class FieldsDataset:
 
 class XBRL:
 
+    fact_labels = {
+        'Revenues':
+            [
+                "us-gaap:Revenues",
+                "us-gaap:SalesRevenueNet",
+                "us-gaap:SalesRevenueServicesNet",
+                "us-gaap:RevenuesNetOfInterestExpense",
+                "us-gaap:RegulatedAndUnregulatedOperatingRevenue",
+                "us-gaap:HealthCareOrganizationRevenue",
+                "us-gaap:InterestAndDividendIncomeOperating",
+                "us-gaap:RealEstateRevenueNet",
+                "us-gaap:RevenueMineralSales",
+                "us-gaap:OilAndGasRevenue",
+                "us-gaap:FinancialServicesRevenue",
+                "us-gaap:RegulatedAndUnregulatedOperatingRevenue",
+                "ifrs-full:Revenue",
+                "ifrs-full:RevenueFromSaleOfOilAndGasProducts"
+            ],
+        'NetIncomeAttributableToParent':
+            [
+                "us-gaap:NetIncomeLoss",
+                "ifrs-full:ProfitLossAttributableToOwnersOfParent"
+            ]
+    }
+
     def __init__(self, xbrl_doc):
 
         self.fields = FieldsDataset()
@@ -413,11 +438,16 @@ class XBRL:
     def get_segment_values(self, concept):
         segments = defaultdict(list)
         for segment_context, segment_name in self.fields['ContextForBusinessSegments']:
+            # print(concept, segment_context.get('id'))
             oNode = self.getNode("//" + concept + "[@contextRef='" + segment_context.get('id') + "']")
+
             if oNode is not None:
                 segments[segment_name].append({"dims": self._get_context_dims(segment_context), "node": oNode})
 
+        #print(self.fields['ContextForBusinessSegments'])
+
         for segment_name, contexts in segments.items():
+            # print("Before")
             # print(len(contexts))
             # for context in contexts:
             #     print('->', context["node"].get('contextRef'))
@@ -445,9 +475,17 @@ class XBRL:
                                         and 'elimination' in dim.text.lower())
                                        for dim in context["dims"])]
 
+            if len(contexts) > 1:
+                contexts = [context
+                            for context in contexts
+                            if any(dim.text == 'us-gaap:OperatingSegmentsMember'
+                                   for dim in context["dims"])]
+
+            # print("After")
             # print(len(contexts))
             # for context in contexts:
             #     print('->', context["node"].get('contextRef'))
+            #     print('value:', float(context["node"].text))
             #     for dim in context["dims"]:
             #         print('  ', dim.get('dimension'))
             #         print('      ', dim.text)

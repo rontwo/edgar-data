@@ -201,38 +201,10 @@ class FundamentantalAccountingConcepts:
 
         # Income statement
         # Revenues
-        self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue("us-gaap:Revenues", "Duration")
-        if self.xbrl.fields['Revenues'] is None:
-            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue("us-gaap:SalesRevenueNet", "Duration")
-            if self.xbrl.fields['Revenues'] is None:
-                self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue("us-gaap:SalesRevenueServicesNet", "Duration")
-                if self.xbrl.fields['Revenues'] is None:
-                    self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue("us-gaap:RevenuesNetOfInterestExpense",
-                                                                          "Duration")
-                    if self.xbrl.fields['Revenues'] is None:
-                        self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                            "us-gaap:RegulatedAndUnregulatedOperatingRevenue", "Duration")
-                        if self.xbrl.fields['Revenues'] is None:
-                            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                "us-gaap:HealthCareOrganizationRevenue", "Duration")
-                            if self.xbrl.fields['Revenues'] is None:
-                                self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                    "us-gaap:InterestAndDividendIncomeOperating", "Duration")
-                                if self.xbrl.fields['Revenues'] is None:
-                                    self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                        "us-gaap:RealEstateRevenueNet", "Duration")
-                                    if self.xbrl.fields['Revenues'] is None:
-                                        self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                            "us-gaap:RevenueMineralSales", "Duration")
-                                        if self.xbrl.fields['Revenues'] is None:
-                                            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                                "us-gaap:OilAndGasRevenue", "Duration")
-                                            if self.xbrl.fields['Revenues'] is None:
-                                                self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                                    "us-gaap:FinancialServicesRevenue", "Duration")
-                                                if self.xbrl.fields['Revenues'] is None:
-                                                    self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(
-                                                        "us-gaap:RegulatedAndUnregulatedOperatingRevenue", "Duration")
+        for fact_name in self.xbrl.fact_labels['Revenues']:
+            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(fact_name, "Duration")
+            if self.xbrl.fields['Revenues'] is not None:
+                break
 
         # CostOfRevenue
         self.xbrl.fields['CostOfRevenue'] = self.xbrl.GetFactValue("us-gaap:CostOfRevenue", "Duration")
@@ -373,8 +345,10 @@ class FundamentantalAccountingConcepts:
         self.xbrl.fields['NetIncomeAttributableToNoncontrollingInterest'] = self.xbrl.GetFactValue(
             "us-gaap:NetIncomeLossAttributableToNoncontrollingInterest", "Duration")
 
-        # NetIncomeAttributableToParent
-        self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue("us-gaap:NetIncomeLoss", "Duration")
+        for fact_name in self.xbrl.fact_labels['NetIncomeAttributableToParent']:
+            self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue(fact_name, "Duration")
+            if self.xbrl.fields['NetIncomeAttributableToParent'] is not None:
+                break
 
         # OtherComprehensiveIncome
         self.xbrl.fields['OtherComprehensiveIncome'] = self.xbrl.GetFactValue(
@@ -792,14 +766,6 @@ class FundamentantalAccountingConcepts:
         """
 
         # These are the ones also found on GAAP:
-        if self.xbrl.fields['Revenues'] is None:
-            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:Revenue', 'Duration')
-            if self.xbrl.fields['Revenues'] is None:
-                self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue('ifrs-full:RevenueFromSaleOfOilAndGasProducts', 'Duration')
-
-        if self.xbrl.fields['NetIncomeAttributableToParent'] is None:
-            self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue(
-                "ifrs-full:ProfitLossAttributableToOwnersOfParent", "Duration")
 
         if self.xbrl.fields['Assets'] is None:
             self.xbrl.fields['Assets'] = self.xbrl.GetFactValue('ifrs-full:Assets', 'Instant')

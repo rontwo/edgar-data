@@ -165,7 +165,7 @@ class TestSEC:
                     print(doc.index_url)
                     print(doc.text_url)
                     print('Revenues:', doc.fields['Revenues'], doc.fields.currency('Revenues'))
-                    print('Revenues segments:', doc.fields['Revenues'].segment_values)
+                    #print('Revenues segments:', doc.fields['Revenues'].segment_values)
                     print('Assets:', doc.fields['Assets'], doc.fields.currency('Assets'))
                     print('Cost of Revenues:', doc.fields['CostOfRevenue'], doc.fields.currency('CostOfRevenue'))
                     print('GrossProfit:', doc.fields['GrossProfit'], doc.fields.currency('GrossProfit'))
