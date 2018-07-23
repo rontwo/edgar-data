@@ -152,6 +152,16 @@ class XBRL:
             return oNodelist[0]
         return None
 
+    def get_fact_value(self, concept, period_type):
+        fact_value = None
+        for fact_name in self.fact_labels[concept]:
+            fact_value = self.GetFactValue(fact_name, period_type)
+            if self.fields[concept] is not None:
+                break
+
+        if fact_value:
+            fact_value.concept = concept
+
     def GetFactValue(self, SeekConcept, ConceptPeriodType):
 
         factValue = None
@@ -185,9 +195,9 @@ class XBRL:
         if factValue is not None:
             unit = self.getNode("//xbrli:unit[@id='" + oNode.attrib['unitRef'] + "']//xbrli:measure")
             if unit is not None:
-                field = Field(value=factValue, unit_ref=unit.text, xbrl=self, concept=SeekConcept)
+                field = Field(value=factValue, unit_ref=unit.text, xbrl=self)
             else:
-                field = Field(value=factValue, unit_ref=None, xbrl=self, concept=SeekConcept)
+                field = Field(value=factValue, unit_ref=None, xbrl=self)
 
         return field
 

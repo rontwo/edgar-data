@@ -200,11 +200,7 @@ class FundamentantalAccountingConcepts:
             self.xbrl.fields['Liabilities'] = self.xbrl.fields['CurrentLiabilities']
 
         # Income statement
-        # Revenues
-        for fact_name in self.xbrl.fact_labels['Revenues']:
-            self.xbrl.fields['Revenues'] = self.xbrl.GetFactValue(fact_name, "Duration")
-            if self.xbrl.fields['Revenues'] is not None:
-                break
+        self.xbrl.fields['Revenues'] = self.xbrl.get_fact_value('Revenues', "Duration")
 
         # CostOfRevenue
         self.xbrl.fields['CostOfRevenue'] = self.xbrl.GetFactValue("us-gaap:CostOfRevenue", "Duration")
@@ -345,10 +341,8 @@ class FundamentantalAccountingConcepts:
         self.xbrl.fields['NetIncomeAttributableToNoncontrollingInterest'] = self.xbrl.GetFactValue(
             "us-gaap:NetIncomeLossAttributableToNoncontrollingInterest", "Duration")
 
-        for fact_name in self.xbrl.fact_labels['NetIncomeAttributableToParent']:
-            self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.GetFactValue(fact_name, "Duration")
-            if self.xbrl.fields['NetIncomeAttributableToParent'] is not None:
-                break
+        self.xbrl.fields['NetIncomeAttributableToParent'] = self.xbrl.get_fact_value(
+            'NetIncomeAttributableToParent', "Duration")
 
         # OtherComprehensiveIncome
         self.xbrl.fields['OtherComprehensiveIncome'] = self.xbrl.GetFactValue(
