@@ -6,6 +6,7 @@
 # The GAAP and IFRS data are changed to be None if missing, instead of 0
 
 import re
+from collections import defaultdict
 from datetime import datetime
 
 from lxml import etree
@@ -19,10 +20,16 @@ class EDGARPeriodError(Exception):
     """A period could not be found."""
 
 
+class FieldSegmentError(Exception):
+    """Could not find segment results for the given field."""
+
+
 class Field:
-    def __init__(self, value, unit_ref):
+    def __init__(self, value, unit_ref, xbrl=None, concept=None):
         self.value = value
         self.unit_ref = unit_ref
+        self.xbrl = xbrl
+        self.concept = concept
 
     @property
     def currency(self):
@@ -30,6 +37,13 @@ class Field:
             return find_currency(self.unit_ref)
         else:
             return None
+
+    @property
+    def segment_values(self):
+        if self.xbrl is None or self.concept is None:
+            raise FieldSegmentError("Can't find segment values for the given concept (probably was calculated).")
+        else:
+            return list(self.xbrl.get_segment_values(self.concept))
 
     def __add__(self, other):
         return Field(self.value + other.value, self.unit_ref)
@@ -146,9 +160,9 @@ class XBRL:
         if factValue is not None:
             unit = self.getNode("//xbrli:unit[@id='" + oNode.attrib['unitRef'] + "']//xbrli:measure")
             if unit is not None:
-                field = Field(value=factValue, unit_ref=unit.text)
+                field = Field(value=factValue, unit_ref=unit.text, xbrl=self, concept=SeekConcept)
             else:
-                field = Field(value=factValue, unit_ref=None)
+                field = Field(value=factValue, unit_ref=None, xbrl=self, concept=SeekConcept)
 
         return field
 
@@ -382,13 +396,67 @@ class XBRL:
         all_contexts = self.getNodeList("//xbrli:context")
 
         for context in all_contexts:
+            context_start_date = self.getNode("xbrli:period/xbrli:startDate", context)
             context_end_date = self.getNode("xbrli:period/xbrli:endDate", context)
             # Nodes with the right period
-            if context_end_date is not None and context_end_date.text == EndDate:
-
+            if context_end_date is not None and context_start_date is not None \
+                    and context_start_date.text == StartDateYTD and context_end_date.text == EndDate:
                 business_segments = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember[@dimension='us-gaap:StatementBusinessSegmentsAxis']", context)
                 if business_segments:
-                    self.fields['ContextForBusinessSegments'].append(context)
+                    self.fields['ContextForBusinessSegments'].append((context, business_segments[0].text))
+
+    def _get_context_dims(self, context):
+        return self.getNodeList(
+            "xbrli:entity/xbrli:segment/xbrldi:explicitMember[@dimension!='us-gaap:StatementBusinessSegmentsAxis']",
+            context)
+
+    def get_segment_values(self, concept):
+        segments = defaultdict(list)
+        for segment_context, segment_name in self.fields['ContextForBusinessSegments']:
+            oNode = self.getNode("//" + concept + "[@contextRef='" + segment_context.get('id') + "']")
+            if oNode is not None:
+                segments[segment_name].append({"dims": self._get_context_dims(segment_context), "node": oNode})
+
+        for segment_name, contexts in segments.items():
+            # print(len(contexts))
+            # for context in contexts:
+            #     print('->', context["node"].get('contextRef'))
+            #     for dim in context["dims"]:
+            #         print('  ', dim.get('dimension'))
+            #         print('      ', dim.text)
+
+            if len(contexts) > 1:
+                contexts = [context
+                            for context in contexts
+                            if all(dim.get('dimension') != 'us-gaap:StatementScenarioAxis'
+                                   for dim in context["dims"])]
+
+            # print(len(contexts))
+            # for context in contexts:
+            #     print('->', context["node"].get('contextRef'))
+            #     for dim in context["dims"]:
+            #         print('  ', dim.get('dimension'))
+            #         print('      ', dim.text)
+
+            if len(contexts) > 1:
+                contexts = [context
+                            for context in contexts
+                            if not any((dim.get('dimension') == 'us-gaap:ConsolidationItemsAxis'
+                                        and 'elimination' in dim.text.lower())
+                                       for dim in context["dims"])]
+
+            # print(len(contexts))
+            # for context in contexts:
+            #     print('->', context["node"].get('contextRef'))
+            #     for dim in context["dims"]:
+            #         print('  ', dim.get('dimension'))
+            #         print('      ', dim.text)
+
+            if len(contexts) > 1:
+                raise FieldSegmentError("Could not eliminate enough segments.")
+            # input('')
+
+            yield (segment_name, float(contexts[0]["node"].text))
 
     def LookForAlternativeInstanceContext(self):
         # This deals with the situation where no instance context has no dimensions
