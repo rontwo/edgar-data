@@ -165,14 +165,17 @@ class TestSEC:
                     print(doc.index_url)
                     print(doc.text_url)
                     print('Revenues:', doc.fields['Revenues'], doc.fields.currency('Revenues'))
-                    #print('Revenues segments:', doc.fields['Revenues'].segment_values)
+                    print('Revenues segments:', doc.fields['Revenues'].segment_values)
                     print('Assets:', doc.fields['Assets'], doc.fields.currency('Assets'))
                     print('Cost of Revenues:', doc.fields['CostOfRevenue'], doc.fields.currency('CostOfRevenue'))
                     print('GrossProfit:', doc.fields['GrossProfit'], doc.fields.currency('GrossProfit'))
                     print('OperatingIncomeLoss (EBIT):', doc.fields['OperatingIncomeLoss'], doc.fields.currency('OperatingIncomeLoss'))
                     print('IncomeFromContinuingOperationsBeforeTax (EBIT?):', doc.fields['IncomeFromContinuingOperationsBeforeTax'], doc.fields.currency('IncomeFromContinuingOperationsBeforeTax'))
                     print('ProfitLoss (Net Income):', doc.fields['NetIncomeLoss'], doc.fields.currency('NetIncomeLoss'))
+                    #print('NetIncomeLoss segments:', doc.fields['NetIncomeLoss'].segment_values)
                     print('Net Income attributable:', doc.fields['NetIncomeAttributableToParent'], doc.fields.currency('NetIncomeAttributableToParent'))
+                    if doc.fields['NetIncomeAttributableToParent'] is not None:
+                        print('NetIncomeAttributableToParent segments:', doc.fields['NetIncomeAttributableToParent'].segment_values)
                     print(doc.fields['ContextForDurations'])
                     print('==========')
 

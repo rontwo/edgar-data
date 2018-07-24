@@ -307,27 +307,7 @@ class FundamentantalAccountingConcepts:
                                                                                   "Duration")
 
         # NetIncomeLoss
-        self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue("us-gaap:ProfitLoss", "Duration")
-        if self.xbrl.fields['NetIncomeLoss'] is None:
-            self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue("us-gaap:NetIncomeLoss", "Duration")
-            if self.xbrl.fields['NetIncomeLoss'] is None:
-                self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue(
-                    "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic", "Duration")
-                if self.xbrl.fields['NetIncomeLoss'] is None:
-                    self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue(
-                        "us-gaap:IncomeLossFromContinuingOperations", "Duration")
-                    if self.xbrl.fields['NetIncomeLoss'] is None:
-                        self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue(
-                            "us-gaap:IncomeLossAttributableToParent", "Duration")
-                        if self.xbrl.fields['NetIncomeLoss'] is None:
-                            self.xbrl.fields['NetIncomeLoss'] = self.xbrl.GetFactValue(
-                                "us-gaap:IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest",
-                                "Duration")
-
-        #self.xbrl.fields['NetIncomeAttributableToShareholders'] = self.xbrl.GetFactValue(
-        #    "us-gaap:ProfitLossAttributableToOwnersOfParent", "Duration")
-        #if self.xbrl.fields['NetIncomeAttributableToShareholders'] is None:
-        #    self.xbrl.fields['NetIncomeAttributableToShareholders'] = self.xbrl.fields['NetIncomeLoss']
+        self.xbrl.fields['NetIncomeLoss'] = self.xbrl.get_fact_value('NetIncomeLoss', "Duration")
 
         # NetIncomeAvailableToCommonStockholdersBasic
         self.xbrl.fields['NetIncomeAvailableToCommonStockholdersBasic'] = self.xbrl.GetFactValue(

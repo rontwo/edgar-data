@@ -105,6 +105,15 @@ class XBRL:
             [
                 "us-gaap:NetIncomeLoss",
                 "ifrs-full:ProfitLossAttributableToOwnersOfParent"
+            ],
+        'NetIncomeLoss':
+            [
+                "us-gaap:ProfitLoss",
+                "us-gaap:NetIncomeLoss",
+                "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic",
+                "us-gaap:IncomeLossFromContinuingOperations",
+                "us-gaap:IncomeLossAttributableToParent",
+                "us-gaap:IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest"
             ]
     }
 
@@ -156,11 +165,13 @@ class XBRL:
         fact_value = None
         for fact_name in self.fact_labels[concept]:
             fact_value = self.GetFactValue(fact_name, period_type)
-            if self.fields[concept] is not None:
+            if fact_value is not None:
                 break
 
-        if fact_value:
+        if fact_value is not None:
             fact_value.concept = concept
+
+        return fact_value
 
     def GetFactValue(self, SeekConcept, ConceptPeriodType):
 
@@ -449,10 +460,11 @@ class XBRL:
         segments = defaultdict(list)
         for segment_context, segment_name in self.fields['ContextForBusinessSegments']:
             # print(concept, segment_context.get('id'))
-            oNode = self.getNode("//" + concept + "[@contextRef='" + segment_context.get('id') + "']")
 
-            if oNode is not None:
-                segments[segment_name].append({"dims": self._get_context_dims(segment_context), "node": oNode})
+            for fact_name in self.fact_labels[concept]:
+                oNode = self.getNode("//" + fact_name + "[@contextRef='" + segment_context.get('id') + "']")
+                if oNode is not None:
+                    segments[segment_name].append({"dims": self._get_context_dims(segment_context), "node": oNode})
 
         #print(self.fields['ContextForBusinessSegments'])
 
@@ -504,7 +516,8 @@ class XBRL:
                 raise FieldSegmentError("Could not eliminate enough segments.")
             # input('')
 
-            yield (segment_name, float(contexts[0]["node"].text))
+            if contexts:
+                yield (segment_name, float(contexts[0]["node"].text))
 
     def LookForAlternativeInstanceContext(self):
         # This deals with the situation where no instance context has no dimensions
