@@ -447,9 +447,39 @@ class XBRL:
             # Nodes with the right period
             if context_end_date is not None and context_start_date is not None \
                     and context_start_date.text == StartDateYTD and context_end_date.text == EndDate:
-                business_segments = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember[@dimension='us-gaap:StatementBusinessSegmentsAxis']", context)
-                if business_segments:
-                    self.fields['ContextForBusinessSegments'].append((context, business_segments[0].text))
+                segments = self.getNodeList(
+                    "xbrli:entity/xbrli:segment/xbrldi:explicitMember["
+                    "@dimension='us-gaap:ProductOrServiceAxis' or "
+                    "@dimension='us-gaap:ConsolidationItemsAxis' or "
+                    "@dimension='us-gaap:StatementGeographicalAxis' or "
+                    "@dimension='us-gaap:LegalEntityAxis' or "
+                    "@dimension='us-gaap:StatementBusinessSegmentsAxis']", context)
+
+                axes = [None, None, None, None, None]  # (ProductOrService, ConsolidationItems, StatementGeographical, LegalEntity, StatementBusinessSegments)
+                elimination = False
+                for segment in segments:
+                    dim = segment.get('dimension')
+                    text = segment.text
+
+                    if dim == 'us-gaap:ProductOrServiceAxis':
+                        axes[0] = text
+                    elif dim == 'us-gaap:ConsolidationItemsAxis':
+                        if 'elimination' in text.lower() or 'adjustment' in text.lower():
+                            elimination = True
+                            break
+                        axes[1] = text
+                    if dim == 'us-gaap:StatementGeographicalAxis':
+                        axes[2] = text
+                    if dim == 'us-gaap:LegalEntityAxis':
+                        axes[3] = text
+                    elif dim == 'us-gaap:StatementBusinessSegmentsAxis':
+                        axes[4] = text
+
+                if elimination:
+                    continue
+
+                if any(axis is not None for axis in axes):
+                    self.fields['ContextForBusinessSegments'].append((context, axes))
 
     def _get_context_dims(self, context):
         return self.getNodeList(
@@ -458,51 +488,60 @@ class XBRL:
 
     def get_segment_values(self, concept):
         segments = defaultdict(list)
-        for segment_context, segment_name in self.fields['ContextForBusinessSegments']:
+        for segment_context, axes in self.fields['ContextForBusinessSegments']:
             # print(concept, segment_context.get('id'))
 
             for fact_name in self.fact_labels[concept]:
                 oNode = self.getNode("//" + fact_name + "[@contextRef='" + segment_context.get('id') + "']")
                 if oNode is not None:
-                    segments[segment_name].append({"dims": self._get_context_dims(segment_context), "node": oNode})
+                    segments[tuple(axes)].append({"dims": self._get_context_dims(segment_context), "node": oNode})
+                    break
 
         #print(self.fields['ContextForBusinessSegments'])
 
-        for segment_name, contexts in segments.items():
-            # print("Before")
-            # print(len(contexts))
-            # for context in contexts:
-            #     print('->', context["node"].get('contextRef'))
-            #     for dim in context["dims"]:
-            #         print('  ', dim.get('dimension'))
-            #         print('      ', dim.text)
+        segment_values = []
+        bad_contexts = []
 
+        for axes, contexts in segments.items():
+            # print(len(contexts))
+            # print(axes)
+            # for context in contexts:
+            #     print('->', context["node"].text, context["node"].get('contextRef'))
+
+            # Remove Pro Forma
             if len(contexts) > 1:
                 contexts = [context
                             for context in contexts
-                            if all(dim.get('dimension') != 'us-gaap:StatementScenarioAxis'
-                                   for dim in context["dims"])]
-
-            # print(len(contexts))
-            # for context in contexts:
-            #     print('->', context["node"].get('contextRef'))
-            #     for dim in context["dims"]:
-            #         print('  ', dim.get('dimension'))
-            #         print('      ', dim.text)
-
-            if len(contexts) > 1:
-                contexts = [context
-                            for context in contexts
-                            if not any((dim.get('dimension') == 'us-gaap:ConsolidationItemsAxis'
-                                        and 'elimination' in dim.text.lower())
+                            if not any((dim.get('dimension') == 'us-gaap:StatementScenarioAxis'
+                                        and 'proforma' in dim.text.lower())
                                        for dim in context["dims"])]
 
-            if len(contexts) > 1:
-                contexts = [context
-                            for context in contexts
-                            if any(dim.text == 'us-gaap:OperatingSegmentsMember'
-                                   for dim in context["dims"])]
+            # if len(contexts) > 1:
+            #     contexts = [context
+            #                 for context in contexts
+            #                 if all(dim.get('dimension') != 'us-gaap:StatementScenarioAxis'
+            #                        for dim in context["dims"])]
 
+            # print(len(contexts))
+            # for context in contexts:
+            #     print('->', context["node"].get('contextRef'))
+            #     for dim in context["dims"]:
+            #         print('  ', dim.get('dimension'))
+            #         print('      ', dim.text)
+
+            # if len(contexts) > 1:
+            #     contexts = [context
+            #                 for context in contexts
+            #                 if not any((dim.get('dimension') == 'us-gaap:ConsolidationItemsAxis'
+            #                             and 'elimination' in dim.text.lower())
+            #                            for dim in context["dims"])]
+            #
+            # if len(contexts) > 1:
+            #     contexts = [context
+            #                 for context in contexts
+            #                 if any(dim.text == 'us-gaap:OperatingSegmentsMember'
+            #                        for dim in context["dims"])]
+            #
             # print("After")
             # print(len(contexts))
             # for context in contexts:
@@ -513,11 +552,15 @@ class XBRL:
             #         print('      ', dim.text)
 
             if len(contexts) > 1:
-                raise FieldSegmentError("Could not eliminate enough segments.")
+                bad_contexts.extend(contexts)
+                contexts = []
+                #raise FieldSegmentError("Could not eliminate enough segments.")
             # input('')
 
             if contexts:
-                yield (segment_name, float(contexts[0]["node"].text))
+                segment_values.append(axes + (float(contexts[0]["node"].text),))
+
+        return segment_values, bad_contexts
 
     def LookForAlternativeInstanceContext(self):
         # This deals with the situation where no instance context has no dimensions

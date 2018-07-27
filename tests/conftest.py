@@ -9,6 +9,14 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['Intelsat'],
+        '2017_revenue': 2,
+        'revenue_order': 1e9,
+        'ticker': 'I',
+        'cik': '0001525773',
+        'currency': 'USD'
+    },
+    {
         'company': ['ADVANTAGE OIL'],
         '2017_revenue': 225,
         'revenue_order': 1e6,
