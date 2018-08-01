@@ -37,7 +37,7 @@ class EdgarData:
         """
         :param clean_html: Defines whether the retrieved HTML files should be cleaned.
         """
-        self.clean_html = clean_html
+        self.should_clean_html = clean_html
         self.edgar_url = "https://www.sec.gov/cgi-bin/browse-edgar"
         self.current_date_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -345,7 +345,7 @@ class EdgarData:
                                   index_url=index_url)
 
     def _clean_html(self, content):
-        if self.clean_html:
+        if self.should_clean_html:
             font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
             style_attrs = re.compile(r'('
                                      r'((style|STYLE)=\".*?\")|'
