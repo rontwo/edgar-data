@@ -9,6 +9,15 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['Avadel Pharmaceuticals'],
+        'revenue': 480,
+        'revenue_order': 1e6,
+        'year': 2018,
+        'ticker': '0001012477',
+        'cik': '0001012477',
+        'currency': 'USD'
+    },
+    {
         'company': ['DEUTSCHE BANK AKTIENGESELLSCHAFT'],
         'revenue': 480,
         'revenue_order': 1e6,

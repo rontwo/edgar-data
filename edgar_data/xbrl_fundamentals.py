@@ -449,6 +449,7 @@ class FundamentantalAccountingConcepts:
                 and self.xbrl.fields['Revenues'] is None \
                 and self.xbrl.fields['CostOfRevenue'] is not None:
             self.xbrl.fields['Revenues'] = self.xbrl.fields['GrossProfit'] + self.xbrl.fields['CostOfRevenue']
+            self.xbrl.fields['Revenues'].concept = 'Revenues'
 
         # Impute: CostOfRevenue
         if self.xbrl.fields['GrossProfit'] is not None \

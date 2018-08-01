@@ -25,11 +25,13 @@ class FieldSegmentError(Exception):
 
 
 class Field:
-    def __init__(self, value, unit_ref, xbrl=None, concept=None):
+    def __init__(self, value, unit_ref, xbrl=None, concept=None, calculated=False, calculated_concept=''):
         self.value = value
         self.unit_ref = unit_ref
         self.xbrl = xbrl
         self.concept = concept
+        self.calculated = calculated
+        self.calculated_concept = calculated_concept
 
     @property
     def currency(self):
@@ -54,10 +56,20 @@ class Field:
             return list(self.xbrl.get_segment_values(self.concept))
 
     def __add__(self, other):
-        return Field(self.value + other.value, self.unit_ref)
+        calculated_concept = '(' + (self.concept or self.calculated_concept) + ' + ' + (other.concept or other.calculated_concept) + ')'
+        return Field(self.value + other.value,
+                     self.unit_ref,
+                     xbrl=(self.xbrl or other.xbrl),
+                     calculated_concept=calculated_concept,
+                     calculated=True)
 
     def __sub__(self, other):
-        return Field(self.value - other.value, self.unit_ref)
+        calculated_concept = '(' + (self.concept or self.calculated_concept) + ' - ' + (other.concept or other.calculated_concept) + ')'
+        return Field(self.value - other.value,
+                     self.unit_ref,
+                     xbrl=(self.xbrl or other.xbrl),
+                     calculated_concept=calculated_concept,
+                     calculated=True)
 
     def __float__(self):
         return float(self.value)
@@ -214,9 +226,9 @@ class XBRL:
         if factValue is not None:
             unit = self.getNode("//xbrli:unit[@id='" + oNode.attrib['unitRef'] + "']//xbrli:measure")
             if unit is not None:
-                field = Field(value=factValue, unit_ref=unit.text, xbrl=self)
+                field = Field(value=factValue, unit_ref=unit.text, concept=SeekConcept, xbrl=self)
             else:
-                field = Field(value=factValue, unit_ref=None, xbrl=self)
+                field = Field(value=factValue, unit_ref=None, concept=SeekConcept, xbrl=self)
 
         return field
 
