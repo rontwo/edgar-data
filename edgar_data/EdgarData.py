@@ -33,7 +33,11 @@ class Filing10KNotFound(FilingNotFound):
 
 class EdgarData:
 
-    def __init__(self):
+    def __init__(self, clean_html=False):
+        """
+        :param clean_html: Defines whether the retrieved HTML files should be cleaned.
+        """
+        self.clean_html = clean_html
         self.edgar_url = "https://www.sec.gov/cgi-bin/browse-edgar"
         self.current_date_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -341,23 +345,26 @@ class EdgarData:
                                   index_url=index_url)
 
     def _clean_html(self, content):
-        font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
-        style_attrs = re.compile(r'('
-                                 r'((style|STYLE)=\".*?\")|'
-                                 r'((valign|VALIGN)=\".*?\")|'
-                                 r'((align|ALIGN)=\".*?\")|'
-                                 r'((width|WIDTH)=\".*?\")|'
-                                 r'((height|HEIGHT)=\".*?\")|'
-                                 r'((border|BORDER)=\".*?\")|'
-                                 r'((cellpadding|CELLPADDING)=\".*?\")|'
-                                 r'((cellspacing|CELLSPACING)=\".*?\")|'
-                                 r'((size|SIZE)=\".*?\")|'
-                                 r'((colspan|COLSPAN)=\".*?\")'
-                                 r')')
-        no_font = re.sub(font_tags, '', content)
-        no_style = re.sub(style_attrs, '', no_font)
+        if self.clean_html:
+            font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
+            style_attrs = re.compile(r'('
+                                     r'((style|STYLE)=\".*?\")|'
+                                     r'((valign|VALIGN)=\".*?\")|'
+                                     r'((align|ALIGN)=\".*?\")|'
+                                     r'((width|WIDTH)=\".*?\")|'
+                                     r'((height|HEIGHT)=\".*?\")|'
+                                     r'((border|BORDER)=\".*?\")|'
+                                     r'((cellpadding|CELLPADDING)=\".*?\")|'
+                                     r'((cellspacing|CELLSPACING)=\".*?\")|'
+                                     r'((size|SIZE)=\".*?\")|'
+                                     r'((colspan|COLSPAN)=\".*?\")'
+                                     r')')
+            no_font = re.sub(font_tags, '', content)
+            no_style = re.sub(style_attrs, '', no_font)
 
-        return no_style
+            return no_style
+        else:
+            return content
 
 
 class UnknownFilingType(Exception):
