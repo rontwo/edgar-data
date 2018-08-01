@@ -40,6 +40,14 @@ class Field:
 
     @property
     def segment_values(self):
+        """
+        Returns the segments for this XBRL field. If any bad contexts are found (i.e. non-unique contexts), they are
+        returned as the second return value.
+        The first return value (segment_values) is a list of tuples that uniquely define a segment in the form
+        (ProductOrService, ConsolidationItems, StatementGeographical, LegalEntity, StatementBusinessSegments, Value)
+
+        :return: [ segment_values, bad_contexts ]
+        """
         if self.xbrl is None or self.concept is None:
             raise FieldSegmentError("Can't find segment values for the given concept (probably was calculated).")
         else:
