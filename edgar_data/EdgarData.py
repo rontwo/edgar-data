@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
+from time import sleep
 from urllib.parse import urlencode, urlparse, urlunparse
-import itertools
 
 import requests
 from bs4 import BeautifulSoup
@@ -31,9 +31,24 @@ class Filing10KNotFound(FilingNotFound):
     """Could not find a 10-K filing with the given constraints."""
 
 
+def requests_get_retry(url):
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+    except Exception:
+        sleep(1)
+        resp = requests.get(url)
+        resp.raise_for_status()
+    return resp
+
+
 class EdgarData:
 
-    def __init__(self):
+    def __init__(self, clean_html=False):
+        """
+        :param clean_html: Defines whether the retrieved HTML files should be cleaned.
+        """
+        self.should_clean_html = clean_html
         self.edgar_url = "https://www.sec.gov/cgi-bin/browse-edgar"
         self.current_date_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -59,7 +74,7 @@ class EdgarData:
         kwargs_without_Nones = {k: v for k, v in kwargs.items() if v is not None}
         url = self._generate_edgar_url(**kwargs_without_Nones)
         try:
-            resp = requests.get(url)
+            resp = requests_get_retry(url)
             resp.raise_for_status()
         except RequestException:
             raise EDGARRequestError
@@ -194,7 +209,7 @@ class EdgarData:
             if filing_type != form:
                 continue
 
-            r = requests.get(filing_url)
+            r = requests_get_retry(filing_url)
 
             tree = html.fromstring(r.content)
 
@@ -214,7 +229,7 @@ class EdgarData:
 
     def _retrieve_document(self, url):
         try:
-            resp = requests.get(url)
+            resp = requests_get_retry(url)
             resp.raise_for_status()
         except RequestException:
             raise EDGARRequestError
@@ -272,7 +287,7 @@ class EdgarData:
         url_parts[2] = '/'.join(path)
         url = urlunparse(url_parts)
 
-        r = requests.get(url)
+        r = requests_get_retry(url)
         tree = html.fromstring(r.content)
 
         return self._supplemental_links(tree)
@@ -340,23 +355,26 @@ class EdgarData:
                                   index_url=index_url)
 
     def _clean_html(self, content):
-        font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
-        style_attrs = re.compile(r'('
-                                 r'((style|STYLE)=\".*?\")|'
-                                 r'((valign|VALIGN)=\".*?\")|'
-                                 r'((align|ALIGN)=\".*?\")|'
-                                 r'((width|WIDTH)=\".*?\")|'
-                                 r'((height|HEIGHT)=\".*?\")|'
-                                 r'((border|BORDER)=\".*?\")|'
-                                 r'((cellpadding|CELLPADDING)=\".*?\")|'
-                                 r'((cellspacing|CELLSPACING)=\".*?\")|'
-                                 r'((size|SIZE)=\".*?\")|'
-                                 r'((colspan|COLSPAN)=\".*?\")'
-                                 r')')
-        no_font = re.sub(font_tags, '', content)
-        no_style = re.sub(style_attrs, '', no_font)
+        if self.should_clean_html:
+            font_tags = re.compile(r'(<(font|FONT).*?>|</(font|FONT)>)')
+            style_attrs = re.compile(r'('
+                                     r'((style|STYLE)=\".*?\")|'
+                                     r'((valign|VALIGN)=\".*?\")|'
+                                     r'((align|ALIGN)=\".*?\")|'
+                                     r'((width|WIDTH)=\".*?\")|'
+                                     r'((height|HEIGHT)=\".*?\")|'
+                                     r'((border|BORDER)=\".*?\")|'
+                                     r'((cellpadding|CELLPADDING)=\".*?\")|'
+                                     r'((cellspacing|CELLSPACING)=\".*?\")|'
+                                     r'((size|SIZE)=\".*?\")|'
+                                     r'((colspan|COLSPAN)=\".*?\")'
+                                     r')')
+            no_font = re.sub(font_tags, '', content)
+            no_style = re.sub(style_attrs, '', no_font)
 
-        return no_style
+            return no_style
+        else:
+            return content
 
 
 class UnknownFilingType(Exception):
