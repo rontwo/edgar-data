@@ -9,114 +9,155 @@ def sec():
 
 @pytest.fixture(params=[
     {
+        'company': ['DEUTSCHE BANK AKTIENGESELLSCHAFT'],
+        'revenue': 480,
+        'revenue_order': 1e6,
+        'year': 2015,
+        'ticker': '0001159508',
+        'cik': '0001159508',
+        'currency': 'USD'
+    },
+    {
+        'company': ['EXICURE, INC.'],
+        'revenue': 10,
+        'revenue_order': 1e6,
+        'year': 2017,
+        'ticker': '0001698530',
+        'cik': '0001698530',
+        'currency': 'USD'
+    },
+    {
+        'company': ['Evans Brewing'],
+        'revenue': 2,
+        'revenue_order': 1e6,
+        'year': 2017,
+        'cik': '0001580490',
+        'currency': 'USD'
+    },
+    {
         'company': ['Intelsat'],
-        '2017_revenue': 2,
+        'revenue': 2,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'I',
         'cik': '0001525773',
         'currency': 'USD'
     },
     {
         'company': ['ADVANTAGE OIL'],
-        '2017_revenue': 225,
+        'revenue': 225,
         'revenue_order': 1e6,
+        'year': 2017,
         'cik': '0001468079',
         'currency': 'CAD'
     },
     {
         'company': ['Tesla, Inc'],
-        '2017_revenue': 12,
+        'revenue': 12,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0001318605',
         'currency': 'USD'
     },
     {
         'company': ['Hudson Ltd'],
-        '2017_revenue': 2,
+        'revenue': 2,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'HUD',
         'cik': '0001714368',
         'currency': 'USD'
     },
     {
         'company': ['INTERNATIONAL BUSINESS MACHINES'],
-        '2017_revenue': 79,
+        'revenue': 79,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'IBM',
         'cik': '0000051143',
         'currency': 'USD'
     },
     {
         'company': ['Royal Dutch Shell'],
-        '2017_revenue': 305,
+        'revenue': 305,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'RDSA',
         'cik': '0001306965',
         'currency': 'USD'
     },
     {
         'company': ['SINOPEC SHANGHAI'],
-        '2017_revenue': 92,
+        'revenue': 92,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'SHI',
         'cik': '0000908732',
         'currency': 'CNY'
     },
     {
         'company': ['Toyota'],
-        '2017_revenue': 27597,
+        'revenue': 27597,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'TM',
         'cik': '0001094517',
         'currency': 'JPY'
     },
     {
         'company': ['Walmart Inc'],
-        '2017_revenue': 486,
+        'revenue': 486,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0000104169',
         'currency': 'USD'
     },
     {
         'company': ['BERKSHIRE HATHAWAY INC'],
-        '2017_revenue': 242,
+        'revenue': 242,
         'revenue_order': 1e9,
+        'year': 2017,
         'ticker': 'BRKA',
         'cik': '0001067983',
         'currency': 'USD'
     },
     {
         'company': ['Apple inc'],
-        '2017_revenue': 229,
+        'revenue': 229,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0000320193',
         'currency': 'USD'
     },
     {
         'company': ['Exxon Mobil'],
-        '2017_revenue': 237,
+        'revenue': 237,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0000034088',
         'currency': 'USD'
     },
     {
         'company': ['BOEING CO'],
-        '2017_revenue': 93,
+        'revenue': 93,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0000012927',
         'currency': 'USD'
     },
     {
         'company': ['BOSTON SCIENTIFIC'],
-        '2017_revenue': 9,
+        'revenue': 9,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0000885725',
         'currency': 'USD'
     },
     {
         'company': ['Medtronic plc'],
-        '2017_revenue': 30,
+        'revenue': 30,
         'revenue_order': 1e9,
+        'year': 2017,
         'cik': '0001613103',
         'currency': 'USD'
     }

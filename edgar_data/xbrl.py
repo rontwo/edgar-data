@@ -391,18 +391,15 @@ class XBRL:
                 raise ValueError("Unknown fiscal period focus.")
 
         all_contexts = self.getNodeList("//xbrli:context")
-
         for context in all_contexts:
             context_end_date = self.getNode("xbrli:period/xbrli:endDate", context)
             # Nodes with the right period
-            if context_end_date is not None and context_end_date.text == EndDate:
-
+            if context_end_date is not None and context_end_date.text.split()[0] == EndDate:
                 has_dimensions = self.getNodeList("xbrli:entity/xbrli:segment/xbrldi:explicitMember", context)
                 if not len(has_dimensions):
-                    StartDate = self.getNode("xbrli:period/xbrli:startDate", context).text
+                    StartDate = self.getNode("xbrli:period/xbrli:startDate", context).text.split()[0]
                     start = datetime.strptime(StartDate, date_format)
                     old_start = datetime.strptime(StartDateYTD, date_format)
-
                     delta = abs(end - start).days
                     old_delta = abs(end - old_start).days
 

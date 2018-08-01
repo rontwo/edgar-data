@@ -154,11 +154,11 @@ class TestSEC:
 
         assert cik == company['cik']
 
-        docs = sec.get_form_data(cik=cik, date_start=datetime(2017, 1, 1), date_end=datetime(2018, 12, 31))
+        docs = sec.get_form_data(cik=cik, date_start=datetime(company['year'], 1, 1), date_end=datetime(company['year']+1, 12, 31))
 
         assert docs
         for doc in docs:
-            if doc.period_end_date.year == 2017:
+            if doc.period_end_date and doc.period_end_date.year == company['year']:
                 if doc.xbrl and doc.form_type in ('10-K', '20-F', '40-F'):
                     print('==========')
                     print(company['company'], doc.ticker, doc.filing_date)
@@ -179,6 +179,6 @@ class TestSEC:
                     print(doc.fields['ContextForDurations'])
                     print('==========')
 
-                    assert round(doc.fields['Revenues'].value / company['revenue_order']) == company['2017_revenue']
+                    assert round(doc.fields['Revenues'].value / company['revenue_order']) == company['revenue']
                     assert doc.fields['Revenues'].currency.code == company['currency']
 
