@@ -317,8 +317,6 @@ class XBRL:
                         start = datetime.strptime(StartDate, date_format)
                         old_start = datetime.strptime(StartDateYTD, date_format)
 
-                        print(start, old_start, end)
-
                         delta = abs(end - start).days
                         old_delta = abs(end - old_start).days
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
+from time import sleep
 from urllib.parse import urlencode, urlparse, urlunparse
-import itertools
 
 import requests
 from bs4 import BeautifulSoup
@@ -29,6 +29,17 @@ class FilingNotFound(Exception):
 
 class Filing10KNotFound(FilingNotFound):
     """Could not find a 10-K filing with the given constraints."""
+
+
+def requests_get_retry(url):
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+    except Exception:
+        sleep(1)
+        resp = requests.get(url)
+        resp.raise_for_status()
+    return resp
 
 
 class EdgarData:
@@ -59,7 +70,7 @@ class EdgarData:
         kwargs_without_Nones = {k: v for k, v in kwargs.items() if v is not None}
         url = self._generate_edgar_url(**kwargs_without_Nones)
         try:
-            resp = requests.get(url)
+            resp = requests_get_retry(url)
             resp.raise_for_status()
         except RequestException:
             raise EDGARRequestError
@@ -194,7 +205,7 @@ class EdgarData:
             if filing_type != form:
                 continue
 
-            r = requests.get(filing_url)
+            r = requests_get_retry(filing_url)
 
             tree = html.fromstring(r.content)
 
@@ -214,7 +225,7 @@ class EdgarData:
 
     def _retrieve_document(self, url):
         try:
-            resp = requests.get(url)
+            resp = requests_get_retry(url)
             resp.raise_for_status()
         except RequestException:
             raise EDGARRequestError
@@ -273,7 +284,7 @@ class EdgarData:
         url_parts[2] = '/'.join(path)
         url = urlunparse(url_parts)
 
-        r = requests.get(url)
+        r = requests_get_retry(url)
         tree = html.fromstring(r.content)
 
         return self._supplemental_links(tree)
